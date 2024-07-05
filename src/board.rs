@@ -4,13 +4,17 @@ use crate::pieces::Piece;
 use std::collections::HashMap;
 
 pub struct CheckerBoard {
+    moves: Vec<BoardMove>,
     pieces: HashMap<BoardPosition, Box<dyn Piece>>,
 }
+
+pub struct BoardMove(BoardPosition, BoardPosition);
 
 impl CheckerBoard {
     pub fn new() -> Self {
         Self {
             pieces: HashMap::new(),
+            moves: vec![],
         }
     }
 
@@ -19,7 +23,10 @@ impl CheckerBoard {
         for piece in pieces {
             pieces_map.insert(piece.pos().clone(), piece.piece().clone_box());
         }
-        Self { pieces: pieces_map }
+        Self {
+            pieces: pieces_map,
+            moves: vec![],
+        }
     }
     pub fn is_empty(&self) -> bool {
         self.pieces.is_empty()
@@ -33,13 +40,11 @@ impl CheckerBoard {
     pub fn piece_at(&self, position: &BoardPosition) -> Option<&Box<dyn Piece>> {
         self.pieces.get(position)
     }
-    pub fn move_piece(&mut self, position: &BoardPosition, new_position: &BoardPosition) {
-        let piece = self.pieces.remove(position);
-        match piece {
-            None => {}
-            Some(p) => {
-                self.pieces.insert(new_position.clone(), p);
-            }
+    pub fn move_piece(&mut self, from: &BoardPosition, to: &BoardPosition) {
+        let piece = self.pieces.remove(from);
+        if let Some(p) = piece {
+            self.moves.push(BoardMove(from.clone(), to.clone()));
+            self.pieces.insert(to.clone(), p);
         }
     }
 
@@ -49,6 +54,23 @@ impl CheckerBoard {
             None => vec![],
             Some(piece) => piece.moves(&self, position),
         }
+    }
+
+    pub fn get_last_move(&self) -> Option<&BoardMove> {
+        self.moves.last()
+    }
+}
+
+impl BoardMove {
+    pub fn new(from: BoardPosition, to: BoardPosition) -> Self {
+        Self(from, to)
+    }
+    pub fn from(&self) -> &BoardPosition {
+        &self.0
+    }
+
+    pub fn to(&self) -> &BoardPosition {
+        &self.1
     }
 }
 
@@ -125,5 +147,16 @@ mod chess_board_tests {
         let board = CheckerBoard::with_pieces(pieces);
         let moves = board.get_possible_moves(&board_pos!("b2"));
         assert_eq!(moves.len(), 2);
+    }
+
+    #[test]
+    fn it_can_get_last_move() {
+        let b2 = BoardPiece::build(PieceType::Pawn, PieceColor::White, "b2");
+        let pieces = vec![b2];
+        let mut board = CheckerBoard::with_pieces(pieces);
+        board.move_piece(&board_pos!["b2"], &board_pos!["b3"]);
+        let last_move = board.get_last_move().unwrap();
+        assert_eq!(last_move.from(), &board_pos!["b2"]);
+        assert_eq!(last_move.to(), &board_pos!["b3"]);
     }
 }
