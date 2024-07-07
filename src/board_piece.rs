@@ -1,15 +1,18 @@
 use crate::board::CheckerBoard;
 use crate::board_position::BoardPosition;
-use crate::pawn::Pawn;
-use crate::pieces::{Knight, Piece, PieceColor, PieceType};
+use crate::pieces::knight::Knight;
+use crate::pieces::pawn::Pawn;
+use crate::pieces::{Piece, PieceColor, PieceType};
 
 pub struct BoardPiece(BoardPosition, Box<dyn Piece>);
 
 impl BoardPiece {
-    pub fn build(piece_type: PieceType, color: PieceColor, x: &str) -> Self {
+    pub fn build(piece_type: PieceType, color: PieceColor, position: &str) -> Self {
         match piece_type {
-            PieceType::Pawn => BoardPiece(x.parse().unwrap(), Box::new(Pawn::new(color))),
-            PieceType::Knight => BoardPiece(x.parse().unwrap(), Box::new(Knight::new(color))),
+            PieceType::Pawn => BoardPiece(position.parse().unwrap(), Box::new(Pawn::new(color))),
+            PieceType::Knight => {
+                BoardPiece(position.parse().unwrap(), Box::new(Knight::new(color)))
+            }
         }
     }
 
@@ -28,8 +31,7 @@ impl BoardPiece {
 #[cfg(test)]
 mod board_piece_test {
     use super::*;
-    use crate::pieces::PieceColor;
-    use crate::pieces::PieceType;
+    use crate::pieces::{PieceColor, PieceType};
 
     #[test]
     fn it_builds_white_pawn() {

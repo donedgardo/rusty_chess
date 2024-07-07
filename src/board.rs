@@ -1,3 +1,4 @@
+use crate::board_move::BoardMove;
 use crate::board_piece::BoardPiece;
 use crate::board_position::BoardPosition;
 use crate::pieces::Piece;
@@ -7,8 +8,6 @@ pub struct CheckerBoard {
     moves: Vec<BoardMove>,
     pieces: HashMap<BoardPosition, Box<dyn Piece>>,
 }
-
-pub struct BoardMove(BoardPosition, BoardPosition);
 
 impl CheckerBoard {
     pub fn new() -> Self {
@@ -43,7 +42,11 @@ impl CheckerBoard {
     pub fn move_piece(&mut self, from: &BoardPosition, to: &BoardPosition) {
         let piece = self.pieces.remove(from);
         if let Some(p) = piece {
-            self.moves.push(BoardMove(from.clone(), to.clone()));
+            self.moves.push(BoardMove::new(
+                p.piece_type().clone(),
+                from.clone(),
+                to.clone(),
+            ));
             self.pieces.insert(to.clone(), p);
         }
     }
@@ -59,18 +62,27 @@ impl CheckerBoard {
     pub fn get_last_move(&self) -> Option<&BoardMove> {
         self.moves.last()
     }
-}
 
-impl BoardMove {
-    pub fn new(from: BoardPosition, to: BoardPosition) -> Self {
-        Self(from, to)
-    }
-    pub fn from(&self) -> &BoardPosition {
-        &self.0
+    pub fn is_last_row_for_white(&self, board_position: &BoardPosition) -> bool {
+        board_position.y() + 1 == self.length()
     }
 
-    pub fn to(&self) -> &BoardPosition {
-        &self.1
+    pub fn is_last_row_for_black(&self, board_position: &BoardPosition) -> bool {
+        board_position.y() == 0
+    }
+
+    pub fn is_far_left_side(&self, from: &BoardPosition) -> bool {
+        from.x() == 0
+    }
+
+    pub fn is_far_right_side(&self, from: &BoardPosition) -> bool {
+        from.x() + 1 == self.width()
+    }
+    pub fn width(&self) -> u8 {
+        8
+    }
+    pub fn length(&self) -> u8 {
+        8
     }
 }
 
@@ -80,7 +92,7 @@ mod chess_board_tests {
     use crate::board_piece::BoardPiece;
     use crate::board_pos;
     use crate::board_position::BoardPosition;
-    use crate::pawn::Pawn;
+    use crate::pieces::pawn::Pawn;
     use crate::pieces::{PieceColor, PieceType};
     use std::str::FromStr;
 
@@ -158,5 +170,73 @@ mod chess_board_tests {
         let last_move = board.get_last_move().unwrap();
         assert_eq!(last_move.from(), &board_pos!["b2"]);
         assert_eq!(last_move.to(), &board_pos!["b3"]);
+    }
+    #[test]
+    fn non_eight_row_is_not_last_row_for_white() {
+        let board = CheckerBoard::new();
+        for row in 0..7 {
+            let pos = BoardPosition::new(0, row);
+            assert!(!board.is_last_row_for_white(&pos));
+        }
+    }
+
+    #[test]
+    fn eight_row_is_last_row_for_white() {
+        let board = CheckerBoard::new();
+        assert!(board.is_last_row_for_white(&board_pos!("a8")));
+    }
+    #[test]
+    fn non_first_row_is_not_last_row_for_black() {
+        let board = CheckerBoard::new();
+        for row in 1..=7 {
+            let pos = BoardPosition::new(0, row);
+            assert!(!board.is_last_row_for_black(&pos));
+        }
+    }
+
+    #[test]
+    fn first_row_is_last_row_for_black() {
+        let board = CheckerBoard::new();
+        assert!(board.is_last_row_for_black(&board_pos!("a1")));
+    }
+
+    #[test]
+    fn non_first_column_is_not_far_left_side() {
+        let board = CheckerBoard::new();
+        for column in 1..=7 {
+            let pos = BoardPosition::new(column, 0);
+            assert!(!board.is_far_left_side(&pos));
+        }
+    }
+    #[test]
+    fn first_column_is_far_left_side() {
+        let board = CheckerBoard::new();
+        assert!(board.is_far_left_side(&board_pos!("a1")));
+    }
+
+    #[test]
+    fn non_eight_column_is_not_far_right_side() {
+        let board = CheckerBoard::new();
+        for column in 0..7 {
+            let pos = BoardPosition::new(column, 0);
+            assert!(!board.is_far_right_side(&pos));
+        }
+    }
+    #[test]
+    fn eight_column_is_far_right_side() {
+        let board = CheckerBoard::new();
+        assert!(board.is_far_right_side(&board_pos!("h1")));
+    }
+
+    #[test]
+    fn board_has_eight_width() {
+        let board = CheckerBoard::new();
+        assert_eq!(board.width(), 8);
+    }
+
+    #[test]
+    fn board_has_eight_length() {
+        let board = CheckerBoard::new();
+        assert_eq!(board.length(), 8);
     }
 }

@@ -1,4 +1,5 @@
-use crate::board::{BoardMove, CheckerBoard};
+use crate::board::CheckerBoard;
+use crate::board_move::BoardMove;
 use crate::board_position::BoardPosition;
 use crate::pieces::{Piece, PieceColor, PieceType};
 
@@ -10,106 +11,6 @@ pub struct Pawn {
 impl Pawn {
     pub fn new(color: PieceColor) -> Self {
         Self { color }
-    }
-
-    fn get_most_forward_moves(&self, from: &BoardPosition) -> Box<dyn Iterator<Item = u8>> {
-        match self.color {
-            PieceColor::White => Self::get_white_most_forward_moves(from),
-            PieceColor::Black => Self::get_black_most_forward_moves(from),
-        }
-    }
-
-    fn get_possible_take_positions(
-        &self,
-        from: &BoardPosition,
-    ) -> Box<dyn Iterator<Item = BoardPosition>> {
-        match self.color {
-            PieceColor::White => Self::get_white_possible_take_positions(from),
-            PieceColor::Black => Self::get_black_possible_take_positions(from),
-        }
-    }
-
-    fn get_white_most_forward_moves(from: &BoardPosition) -> Box<dyn Iterator<Item = u8>> {
-        if from.y() == 7 {
-            return Box::new(vec![].into_iter());
-        }
-        let most_forward_move = if from.y() == 1 {
-            from.y() + 2
-        } else {
-            from.y() + 1
-        };
-        Box::new((from.y() + 1..=most_forward_move).into_iter())
-    }
-
-    fn get_white_possible_take_positions(
-        from: &BoardPosition,
-    ) -> Box<dyn Iterator<Item = BoardPosition>> {
-        if from.y() == 7 {
-            return Box::new(vec![].into_iter());
-        }
-        if from.x() == 0 {
-            return Box::new(vec![BoardPosition::new(from.x() + 1, from.y() + 1)].into_iter());
-        } else if from.x() == 7 {
-            return Box::new(vec![BoardPosition::new(from.x() - 1, from.y() + 1)].into_iter());
-        }
-        return Box::new(
-            vec![
-                BoardPosition::new(from.x() - 1, from.y() + 1),
-                BoardPosition::new(from.x() + 1, from.y() + 1),
-            ]
-            .into_iter(),
-        );
-    }
-    fn get_black_possible_take_positions(
-        from: &BoardPosition,
-    ) -> Box<dyn Iterator<Item = BoardPosition>> {
-        if from.y() == 0 {
-            return Box::new(vec![].into_iter());
-        }
-        if from.x() == 0 {
-            return Box::new(vec![BoardPosition::new(from.x() + 1, from.y() - 1)].into_iter());
-        } else if from.x() == 7 {
-            return Box::new(vec![BoardPosition::new(from.x() - 1, from.y() - 1)].into_iter());
-        }
-        return Box::new(
-            vec![
-                BoardPosition::new(from.x() - 1, from.y() - 1),
-                BoardPosition::new(from.x() + 1, from.y() - 1),
-            ]
-            .into_iter(),
-        );
-    }
-
-    fn get_black_most_forward_moves(from: &BoardPosition) -> Box<dyn Iterator<Item = u8>> {
-        if from.y() == 0 {
-            return Box::new(vec![].into_iter());
-        }
-        let most_forward_move = if from.y() == 6 {
-            from.y() - 2
-        } else {
-            from.y() - 1
-        };
-        Box::new((most_forward_move..=from.y() - 1).rev().into_iter())
-    }
-    fn get_white_possible_en_passant_takes(
-        &self,
-        from: &BoardPosition,
-        last_move: Option<&BoardMove>,
-    ) -> Option<BoardPosition> {
-        return match last_move {
-            None => None,
-            Some(board_move) => {
-                if from.x().abs_diff(board_move.to().x()) != 1
-                    || board_move.from().y().abs_diff(board_move.to().y()) != 2
-                {
-                    return None;
-                }
-                return Some(BoardPosition::new(
-                    board_move.to().x(),
-                    board_move.to().y() + 1,
-                ));
-            }
-        };
     }
 
     fn get_possible_moves(
@@ -138,6 +39,155 @@ impl Pawn {
         }
         possible_moves
     }
+
+    fn get_most_forward_moves(
+        &self,
+        from: &BoardPosition,
+        board: &CheckerBoard,
+    ) -> Box<dyn Iterator<Item = u8>> {
+        match self.color {
+            PieceColor::White => Self::get_white_most_forward_moves(from, board),
+            PieceColor::Black => Self::get_black_most_forward_moves(from, board),
+        }
+    }
+
+    fn get_possible_take_positions(
+        &self,
+        from: &BoardPosition,
+        board: &CheckerBoard,
+    ) -> Box<dyn Iterator<Item = BoardPosition>> {
+        match self.color {
+            PieceColor::White => Self::get_white_possible_take_positions(from, board),
+            PieceColor::Black => Self::get_black_possible_take_positions(from, board),
+        }
+    }
+
+    fn get_possible_en_passant_take(
+        &self,
+        from: &BoardPosition,
+        last_move: Option<&BoardMove>,
+    ) -> Option<BoardPosition> {
+        match self.color {
+            PieceColor::White => self.get_white_possible_en_passant_take(from, last_move),
+            PieceColor::Black => self.get_black_possible_en_passant_take(from, last_move),
+        }
+    }
+
+    fn get_white_most_forward_moves(
+        from: &BoardPosition,
+        board: &CheckerBoard,
+    ) -> Box<dyn Iterator<Item = u8>> {
+        if board.is_last_row_for_white(from) {
+            return Box::new(vec![].into_iter());
+        }
+        let most_forward_move = if from.y() == 1 {
+            from.y() + 2
+        } else {
+            from.y() + 1
+        };
+        Box::new((from.y() + 1..=most_forward_move).into_iter())
+    }
+
+    fn get_black_most_forward_moves(
+        from: &BoardPosition,
+        board: &CheckerBoard,
+    ) -> Box<dyn Iterator<Item = u8>> {
+        if board.is_last_row_for_black(from) {
+            return Box::new(vec![].into_iter());
+        }
+        let most_forward_move = if from.y() == 6 {
+            from.y() - 2
+        } else {
+            from.y() - 1
+        };
+        Box::new((most_forward_move..=from.y() - 1).rev().into_iter())
+    }
+
+    fn get_white_possible_take_positions(
+        from: &BoardPosition,
+        board: &CheckerBoard,
+    ) -> Box<dyn Iterator<Item = BoardPosition>> {
+        if board.is_last_row_for_white(from) {
+            return Box::new(vec![].into_iter());
+        }
+        if board.is_far_left_side(from) {
+            return Box::new(vec![BoardPosition::new(from.x() + 1, from.y() + 1)].into_iter());
+        } else if board.is_far_right_side(from) {
+            return Box::new(vec![BoardPosition::new(from.x() - 1, from.y() + 1)].into_iter());
+        }
+        return Box::new(
+            vec![
+                BoardPosition::new(from.x() - 1, from.y() + 1),
+                BoardPosition::new(from.x() + 1, from.y() + 1),
+            ]
+            .into_iter(),
+        );
+    }
+
+    fn get_black_possible_take_positions(
+        from: &BoardPosition,
+        board: &CheckerBoard,
+    ) -> Box<dyn Iterator<Item = BoardPosition>> {
+        if board.is_last_row_for_black(from) {
+            return Box::new(vec![].into_iter());
+        }
+        if board.is_far_left_side(from) {
+            return Box::new(vec![BoardPosition::new(from.x() + 1, from.y() - 1)].into_iter());
+        } else if board.is_far_right_side(from) {
+            return Box::new(vec![BoardPosition::new(from.x() - 1, from.y() - 1)].into_iter());
+        }
+        return Box::new(
+            vec![
+                BoardPosition::new(from.x() - 1, from.y() - 1),
+                BoardPosition::new(from.x() + 1, from.y() - 1),
+            ]
+            .into_iter(),
+        );
+    }
+
+    fn get_white_possible_en_passant_take(
+        &self,
+        from: &BoardPosition,
+        last_move: Option<&BoardMove>,
+    ) -> Option<BoardPosition> {
+        return match last_move {
+            None => None,
+            Some(board_move) => {
+                if !Self::can_en_passant(from, board_move) {
+                    return None;
+                }
+                return Some(BoardPosition::new(
+                    board_move.to().x(),
+                    board_move.to().y() + 1,
+                ));
+            }
+        };
+    }
+
+    fn get_black_possible_en_passant_take(
+        &self,
+        from: &BoardPosition,
+        last_move: Option<&BoardMove>,
+    ) -> Option<BoardPosition> {
+        return match last_move {
+            None => None,
+            Some(board_move) => {
+                if !Self::can_en_passant(from, board_move) {
+                    return None;
+                }
+                return Some(BoardPosition::new(
+                    board_move.to().x(),
+                    board_move.to().y() - 1,
+                ));
+            }
+        };
+    }
+
+    fn can_en_passant(from: &BoardPosition, last_move: &BoardMove) -> bool {
+        last_move.piece_type() == &PieceType::Pawn
+            && from.x().abs_diff(last_move.to().x()) == 1
+            && last_move.from().y().abs_diff(last_move.to().y()) == 2
+    }
 }
 
 impl Piece for Pawn {
@@ -148,12 +198,15 @@ impl Piece for Pawn {
         &PieceType::Pawn
     }
     fn moves(&self, board: &CheckerBoard, from: &BoardPosition) -> Vec<BoardPosition> {
-        let possible_forward_moves = self.get_most_forward_moves(from);
-        let possible_takes = self.get_possible_take_positions(from);
-        // let _possible_en_passant = self.get_possible_en_passant(from, board.get_last_move());
-        self.get_possible_moves(board, &from, possible_forward_moves, possible_takes)
-            .into_iter()
-            .collect()
+        let possible_forward_moves = self.get_most_forward_moves(from, board);
+        let possible_takes = self.get_possible_take_positions(from, board);
+        let mut moves =
+            self.get_possible_moves(board, &from, possible_forward_moves, possible_takes);
+        let possible_en_passant = self.get_possible_en_passant_take(from, board.get_last_move());
+        if let Some(en_passant_take) = possible_en_passant {
+            moves.push(en_passant_take);
+        }
+        moves
     }
     fn is_opponent(&self, color: &PieceColor) -> bool {
         &self.color != color
@@ -162,11 +215,12 @@ impl Piece for Pawn {
 
 #[cfg(test)]
 mod white_pawn_tests {
-    use crate::board::{BoardMove, CheckerBoard};
+    use crate::board::CheckerBoard;
+    use crate::board_move::BoardMove;
     use crate::board_piece::BoardPiece;
     use crate::board_pos;
     use crate::board_position::BoardPosition;
-    use crate::pawn::Pawn;
+    use crate::pieces::pawn::Pawn;
     use crate::pieces::{Piece, PieceColor, PieceType};
     use std::str::FromStr;
 
@@ -252,8 +306,9 @@ mod white_pawn_tests {
     #[test]
     fn possible_take_positions_in_a() {
         let a2 = Pawn::new(PieceColor::White);
+        let board = CheckerBoard::new();
         let possible_takes = a2
-            .get_possible_take_positions(&board_pos!("a2"))
+            .get_possible_take_positions(&board_pos!("a2"), &board)
             .collect::<Vec<BoardPosition>>();
         assert_eq!(possible_takes, vec![board_pos!("b3")]);
     }
@@ -261,8 +316,9 @@ mod white_pawn_tests {
     #[test]
     fn possible_take_positions_in_h() {
         let h2 = Pawn::new(PieceColor::White);
+        let board = CheckerBoard::new();
         let possible_takes = h2
-            .get_possible_take_positions(&board_pos!("h2"))
+            .get_possible_take_positions(&board_pos!("h2"), &board)
             .collect::<Vec<BoardPosition>>();
         assert_eq!(possible_takes, vec![board_pos!("g3")]);
     }
@@ -270,8 +326,9 @@ mod white_pawn_tests {
     #[test]
     fn possible_take_positions_in_row_8() {
         let a8 = Pawn::new(PieceColor::White);
+        let board = CheckerBoard::new();
         let possible_takes = a8
-            .get_possible_take_positions(&board_pos!("a8"))
+            .get_possible_take_positions(&board_pos!("a8"), &board)
             .collect::<Vec<BoardPosition>>();
         assert_eq!(possible_takes, vec![]);
     }
@@ -279,8 +336,9 @@ mod white_pawn_tests {
     #[test]
     fn possible_take_positions_in_middle() {
         let d4 = Pawn::new(PieceColor::White);
+        let board = CheckerBoard::new();
         let possible_takes = d4
-            .get_possible_take_positions(&board_pos!("d4"))
+            .get_possible_take_positions(&board_pos!("d4"), &board)
             .collect::<Vec<BoardPosition>>();
         assert_eq!(possible_takes, vec![board_pos!("c5"), board_pos!("e5")]);
     }
@@ -339,49 +397,44 @@ mod white_pawn_tests {
     #[test]
     fn cant_en_passant_if_last_move_is_none() {
         let d5 = Pawn::new(PieceColor::White);
-        let possible_takes = d5.get_white_possible_en_passant_takes(&board_pos!("d5"), None);
+        let possible_takes = d5.get_possible_en_passant_take(&board_pos!("d5"), None);
         assert!(possible_takes.is_none());
     }
 
     #[test]
     fn cant_en_passant_if_last_move_is_not_adjacent() {
         let d5 = Pawn::new(PieceColor::White);
-        let last_move = BoardMove::new(board_pos!("a7"), board_pos!("a5"));
-        let possible_takes =
-            d5.get_white_possible_en_passant_takes(&board_pos!("d5"), Some(&last_move));
+        let last_move = BoardMove::new(PieceType::Pawn, board_pos!("a7"), board_pos!("a5"));
+        let possible_takes = d5.get_possible_en_passant_take(&board_pos!("d5"), Some(&last_move));
         assert!(possible_takes.is_none());
     }
 
     #[test]
     fn cant_en_passant_if_last_move_is_not_two_squared_move() {
         let d5 = Pawn::new(PieceColor::White);
-        let last_move = BoardMove::new(board_pos!("c6"), board_pos!("c5"));
-        let possible_takes =
-            d5.get_white_possible_en_passant_takes(&board_pos!("d5"), Some(&last_move));
+        let last_move = BoardMove::new(PieceType::Pawn, board_pos!("c6"), board_pos!("c5"));
+        let possible_takes = d5.get_possible_en_passant_take(&board_pos!("d5"), Some(&last_move));
         assert!(possible_takes.is_none());
     }
 
     #[test]
-    #[ignore]
-    fn cant_en_passant_if_last_move_is_not_a_pawn() {
+    fn cant_en_passant_if_last_move_is_not_pawn() {
         let d5 = Pawn::new(PieceColor::White);
-        let last_move = BoardMove::new(board_pos!("c7"), board_pos!("c5"));
-        let possible_takes =
-            d5.get_white_possible_en_passant_takes(&board_pos!("d5"), Some(&last_move));
+        let last_move = BoardMove::new(PieceType::Knight, board_pos!("c7"), board_pos!("c5"));
+        let possible_takes = d5.get_possible_en_passant_take(&board_pos!("d5"), Some(&last_move));
         assert!(possible_takes.is_none());
     }
 
     #[test]
     fn can_en_passant_if_last_move_is_two_squared_move() {
         let d5 = Pawn::new(PieceColor::White);
-        let last_move = BoardMove::new(board_pos!("c7"), board_pos!("c5"));
-        let possible_takes =
-            d5.get_white_possible_en_passant_takes(&board_pos!("d5"), Some(&last_move));
+        let last_move = BoardMove::new(PieceType::Pawn, board_pos!("c7"), board_pos!("c5"));
+        let possible_takes = d5.get_possible_en_passant_take(&board_pos!("d5"), Some(&last_move));
         assert_eq!(possible_takes, Some(board_pos!("c6")));
     }
 
     #[test]
-    fn cant_en_passant_if_black_didnt_pass_from_7_row() {
+    fn cant_en_passant_if_black_didnt_pass_from_seventh_row() {
         let b6 = BoardPiece::build(PieceType::Pawn, PieceColor::Black, "b6");
         let c5 = BoardPiece::build(PieceType::Pawn, PieceColor::White, "c5");
         let pieces = vec![b6, c5];
@@ -392,8 +445,7 @@ mod white_pawn_tests {
     }
 
     #[test]
-    #[ignore]
-    fn can_en_passant_if_black_pass_from_7_row() {
+    fn can_en_passant_if_black_pass_from_seventh_row() {
         let c5 = BoardPiece::build(PieceType::Pawn, PieceColor::White, "c5");
         let b6 = BoardPiece::build(PieceType::Pawn, PieceColor::Black, "b7");
         let pieces = vec![b6, c5];
@@ -487,8 +539,9 @@ mod black_pawn_tests {
     #[test]
     fn possible_take_positions_in_a() {
         let a7 = Pawn::new(PieceColor::Black);
+        let board = CheckerBoard::new();
         let possible_takes = a7
-            .get_possible_take_positions(&board_pos!("a7"))
+            .get_possible_take_positions(&board_pos!("a7"), &board)
             .collect::<Vec<BoardPosition>>();
         assert_eq!(possible_takes, vec![board_pos!("b6")]);
     }
@@ -496,8 +549,9 @@ mod black_pawn_tests {
     #[test]
     fn possible_take_positions_in_h() {
         let h7 = Pawn::new(PieceColor::Black);
+        let board = CheckerBoard::new();
         let possible_takes = h7
-            .get_possible_take_positions(&board_pos!("h7"))
+            .get_possible_take_positions(&board_pos!("h7"), &board)
             .collect::<Vec<BoardPosition>>();
         assert_eq!(possible_takes, vec![board_pos!("g6")]);
     }
@@ -505,8 +559,9 @@ mod black_pawn_tests {
     #[test]
     fn possible_take_positions_in_row_1() {
         let b1 = Pawn::new(PieceColor::Black);
+        let board = CheckerBoard::new();
         let possible_takes = b1
-            .get_possible_take_positions(&board_pos!("b1"))
+            .get_possible_take_positions(&board_pos!("b1"), &board)
             .collect::<Vec<BoardPosition>>();
         assert_eq!(possible_takes, vec![]);
     }
@@ -514,8 +569,9 @@ mod black_pawn_tests {
     #[test]
     fn possible_take_positions_in_middle() {
         let d5 = Pawn::new(PieceColor::Black);
+        let board = CheckerBoard::new();
         let possible_takes = d5
-            .get_possible_take_positions(&board_pos!("d5"))
+            .get_possible_take_positions(&board_pos!("d5"), &board)
             .collect::<Vec<BoardPosition>>();
         assert_eq!(possible_takes, vec![board_pos!("c4"), board_pos!("e4")]);
     }
@@ -568,5 +624,66 @@ mod black_pawn_tests {
         let board = CheckerBoard::with_pieces(pieces);
         let c4moves = board.get_possible_moves(&board_pos!("c4"));
         assert!(!c4moves.contains(&board_pos!("d3")));
+    }
+
+    #[test]
+    fn cant_en_passant_if_last_move_is_none() {
+        let d4 = Pawn::new(PieceColor::Black);
+        let possible_takes = d4.get_possible_en_passant_take(&board_pos!("d4"), None);
+        assert!(possible_takes.is_none());
+    }
+
+    #[test]
+    fn cant_en_passant_if_last_move_is_not_adjacent() {
+        let d4 = Pawn::new(PieceColor::Black);
+        let last_move = BoardMove::new(PieceType::Pawn, board_pos!("d4"), board_pos!("a4"));
+        let possible_takes = d4.get_possible_en_passant_take(&board_pos!("d4"), Some(&last_move));
+        assert!(possible_takes.is_none());
+    }
+
+    #[test]
+    fn cant_en_passant_if_last_move_is_not_two_squared_move() {
+        let d4 = Pawn::new(PieceColor::White);
+        let last_move = BoardMove::new(PieceType::Pawn, board_pos!("c2"), board_pos!("c3"));
+        let possible_takes = d4.get_possible_en_passant_take(&board_pos!("d4"), Some(&last_move));
+        assert!(possible_takes.is_none());
+    }
+
+    #[test]
+    fn cant_en_passant_if_last_move_is_not_a_pawn() {
+        let d4 = Pawn::new(PieceColor::Black);
+        let last_move = BoardMove::new(PieceType::Knight, board_pos!("c2"), board_pos!("c4"));
+        let possible_takes = d4.get_possible_en_passant_take(&board_pos!("d4"), Some(&last_move));
+        assert!(possible_takes.is_none());
+    }
+
+    #[test]
+    fn can_en_passant_if_last_move_is_two_squared_move() {
+        let d4 = Pawn::new(PieceColor::Black);
+        let last_move = BoardMove::new(PieceType::Pawn, board_pos!("c2"), board_pos!("c4"));
+        let possible_takes = d4.get_possible_en_passant_take(&board_pos!("d4"), Some(&last_move));
+        assert_eq!(possible_takes, Some(board_pos!("c3")));
+    }
+
+    #[test]
+    fn cant_en_passant_if_white_didnt_pass_from_seventh_row() {
+        let d4 = BoardPiece::build(PieceType::Pawn, PieceColor::Black, "d4");
+        let c3 = BoardPiece::build(PieceType::Pawn, PieceColor::White, "c3");
+        let pieces = vec![d4, c3];
+        let mut board = CheckerBoard::with_pieces(pieces);
+        board.move_piece(&board_pos!["c3"], &board_pos!["c4"]);
+        let moves = board.get_possible_moves(&board_pos!("d4"));
+        assert!(!moves.contains(&board_pos!("c3")));
+    }
+
+    #[test]
+    fn can_en_passant_if_white_pass_from_second_row() {
+        let d4 = BoardPiece::build(PieceType::Pawn, PieceColor::Black, "d4");
+        let c2 = BoardPiece::build(PieceType::Pawn, PieceColor::White, "c2");
+        let pieces = vec![d4, c2];
+        let mut board = CheckerBoard::with_pieces(pieces);
+        board.move_piece(&board_pos!["c2"], &board_pos!["c4"]);
+        let moves = board.get_possible_moves(&board_pos!("d4"));
+        assert!(moves.contains(&board_pos!("c3")));
     }
 }
