@@ -1,5 +1,6 @@
 use crate::board::CheckerBoard;
 use crate::board_position::BoardPosition;
+use crate::pieces::king::King;
 use crate::pieces::knight::Knight;
 use crate::pieces::pawn::Pawn;
 use crate::pieces::{Piece, PieceColor, PieceType};
@@ -13,6 +14,7 @@ impl BoardPiece {
             PieceType::Knight => {
                 BoardPiece(position.parse().unwrap(), Box::new(Knight::new(color)))
             }
+            PieceType::King => BoardPiece(position.parse().unwrap(), Box::new(King::new(color))),
         }
     }
 
@@ -60,5 +62,12 @@ mod board_piece_test {
         assert_eq!(a1.pos(), &"c8".parse().unwrap());
         assert_eq!(a1.piece().piece_type(), &PieceType::Knight);
         assert_eq!(a1.piece().color(), &PieceColor::Black);
+    }
+    #[test]
+    fn it_builds_black_king() {
+        let d8 = BoardPiece::build(PieceType::King, PieceColor::Black, "d8");
+        assert_eq!(d8.pos(), &"d8".parse().unwrap());
+        assert_eq!(d8.piece().piece_type(), &PieceType::King);
+        assert_eq!(d8.piece().color(), &PieceColor::Black);
     }
 }

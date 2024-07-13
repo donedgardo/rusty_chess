@@ -1,7 +1,7 @@
 use crate::board_move::BoardMove;
 use crate::board_piece::BoardPiece;
 use crate::board_position::BoardPosition;
-use crate::pieces::Piece;
+use crate::pieces::{Piece, PieceColor};
 use std::collections::HashMap;
 
 pub struct CheckerBoard {
@@ -83,6 +83,18 @@ impl CheckerBoard {
     }
     pub fn length(&self) -> u8 {
         8
+    }
+    pub fn is_pos_valid(&self, position: &(i8, i8)) -> bool {
+        position.0 >= 0
+            && position.0 < self.width() as i8
+            && position.1 >= 0
+            && position.1 < self.length() as i8
+    }
+    pub fn pos_is_occupied_with_color(&self, pos: &BoardPosition, color: &PieceColor) -> bool {
+        return match self.piece_at(pos) {
+            None => true,
+            Some(piece) => piece.is_opponent(color),
+        };
     }
 }
 
@@ -238,5 +250,47 @@ mod chess_board_tests {
     fn board_has_eight_length() {
         let board = CheckerBoard::new();
         assert_eq!(board.length(), 8);
+    }
+
+    #[test]
+    fn out_of_left_edge_is_not_valid() {
+        let board = CheckerBoard::new();
+        assert!(!board.is_pos_valid(&(-1, 0)));
+    }
+
+    #[test]
+    fn out_of_right_edge_is_not_valid() {
+        let board = CheckerBoard::new();
+        assert!(!board.is_pos_valid(&(8, 0)));
+    }
+
+    #[test]
+    fn out_of_bottom_edge_is_not_valid() {
+        let board = CheckerBoard::new();
+        assert!(!board.is_pos_valid(&(0, -1)));
+    }
+
+    #[test]
+    fn out_of_top_edge_is_not_valid() {
+        let board = CheckerBoard::new();
+        assert!(!board.is_pos_valid(&(0, 8)));
+    }
+
+    #[test]
+    fn pos_is_not_occupied_with_color_when_space_is_empty() {
+        let board = CheckerBoard::new();
+        assert!(board.pos_is_occupied_with_color(&board_pos!("a4"), &PieceColor::White));
+    }
+    #[test]
+    fn pos_is_not_occupied_with_color_when_opponent_occupies_space() {
+        let pieces = vec![BoardPiece::build(PieceType::Pawn, PieceColor::Black, "a4")];
+        let board = CheckerBoard::with_pieces(pieces);
+        assert!(board.pos_is_occupied_with_color(&board_pos!("a4"), &PieceColor::White));
+    }
+    #[test]
+    fn pos_is_occupied_with_color() {
+        let pieces = vec![BoardPiece::build(PieceType::Pawn, PieceColor::White, "a4")];
+        let board = CheckerBoard::with_pieces(pieces);
+        assert!(!board.pos_is_occupied_with_color(&board_pos!("a4"), &PieceColor::White));
     }
 }

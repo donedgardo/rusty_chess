@@ -20,7 +20,7 @@ impl Pawn {
         possible_forward_moves: Box<dyn Iterator<Item = u8>>,
         possible_takes: Box<dyn Iterator<Item = BoardPosition>>,
     ) -> Vec<BoardPosition> {
-        let mut possible_moves = vec![];
+        let mut possible_moves = Vec::with_capacity(4);
         for forward_move in possible_forward_moves {
             if board
                 .piece_at(&BoardPosition::new(from.x(), forward_move))
@@ -78,7 +78,7 @@ impl Pawn {
         board: &CheckerBoard,
     ) -> Box<dyn Iterator<Item = u8>> {
         if board.is_last_row_for_white(from) {
-            return Box::new(vec![].into_iter());
+            return Box::new([].into_iter());
         }
         let most_forward_move = if from.y() == 1 {
             from.y() + 2
@@ -93,7 +93,7 @@ impl Pawn {
         board: &CheckerBoard,
     ) -> Box<dyn Iterator<Item = u8>> {
         if board.is_last_row_for_black(from) {
-            return Box::new(vec![].into_iter());
+            return Box::new([].into_iter());
         }
         let most_forward_move = if from.y() == 6 {
             from.y() - 2

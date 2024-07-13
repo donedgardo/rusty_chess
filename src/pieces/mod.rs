@@ -1,6 +1,7 @@
 use crate::board::CheckerBoard;
 use crate::board_position::BoardPosition;
 
+pub mod king;
 pub mod knight;
 pub mod pawn;
 
@@ -14,6 +15,7 @@ pub enum PieceColor {
 pub enum PieceType {
     Pawn,
     Knight,
+    King,
 }
 
 pub trait Piece: CloneBox {
