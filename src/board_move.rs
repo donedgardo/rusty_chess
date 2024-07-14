@@ -1,5 +1,5 @@
 use crate::board_position::BoardPosition;
-use crate::pieces::PieceType;
+use crate::pieces::piece_type::PieceType;
 
 pub struct BoardMove(PieceType, BoardPosition, BoardPosition);
 impl BoardMove {

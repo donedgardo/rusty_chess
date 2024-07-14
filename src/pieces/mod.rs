@@ -1,22 +1,13 @@
 use crate::board::CheckerBoard;
 use crate::board_position::BoardPosition;
+use color::PieceColor;
+use piece_type::PieceType;
 
+pub mod color;
 pub mod king;
 pub mod knight;
 pub mod pawn;
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum PieceColor {
-    White,
-    Black,
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum PieceType {
-    Pawn,
-    Knight,
-    King,
-}
+pub mod piece_type;
 
 pub trait Piece: CloneBox {
     fn color(&self) -> &PieceColor;

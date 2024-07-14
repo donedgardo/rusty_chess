@@ -1,7 +1,8 @@
 use crate::board_move::BoardMove;
 use crate::board_piece::BoardPiece;
 use crate::board_position::BoardPosition;
-use crate::pieces::{Piece, PieceColor};
+use crate::pieces::color::PieceColor;
+use crate::pieces::Piece;
 use std::collections::HashMap;
 
 pub struct CheckerBoard {
@@ -96,6 +97,10 @@ impl CheckerBoard {
             Some(piece) => piece.is_opponent(color),
         };
     }
+
+    pub fn is_checked(&self, _color: &PieceColor) -> bool {
+        false
+    }
 }
 
 #[cfg(test)]
@@ -104,8 +109,9 @@ mod chess_board_tests {
     use crate::board_piece::BoardPiece;
     use crate::board_pos;
     use crate::board_position::BoardPosition;
+    use crate::pieces::color::PieceColor;
     use crate::pieces::pawn::Pawn;
-    use crate::pieces::{PieceColor, PieceType};
+    use crate::pieces::piece_type::PieceType;
     use std::str::FromStr;
 
     #[test]
@@ -292,5 +298,12 @@ mod chess_board_tests {
         let pieces = vec![BoardPiece::build(PieceType::Pawn, PieceColor::White, "a4")];
         let board = CheckerBoard::with_pieces(pieces);
         assert!(!board.pos_is_occupied_with_color(&board_pos!("a4"), &PieceColor::White));
+    }
+
+    #[test]
+    fn empty_board_no_one_is_checked() {
+        let board = CheckerBoard::new();
+        assert!(!board.is_checked(&PieceColor::White));
+        assert!(!board.is_checked(&PieceColor::Black));
     }
 }

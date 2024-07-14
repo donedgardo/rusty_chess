@@ -1,6 +1,8 @@
 use crate::board::CheckerBoard;
 use crate::board_position::BoardPosition;
-use crate::pieces::{Piece, PieceColor, PieceType};
+use crate::pieces::color::PieceColor;
+use crate::pieces::piece_type::PieceType;
+use crate::pieces::Piece;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct King {
@@ -53,8 +55,10 @@ mod king_tests {
     use crate::board_piece::BoardPiece;
     use crate::board_pos;
     use crate::board_position::BoardPosition;
+    use crate::pieces::color::PieceColor;
     use crate::pieces::king::King;
-    use crate::pieces::{Piece, PieceColor, PieceType};
+    use crate::pieces::piece_type::PieceType;
+    use crate::pieces::Piece;
     use std::str::FromStr;
 
     #[test]

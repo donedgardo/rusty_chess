@@ -1,7 +1,9 @@
 use crate::board::CheckerBoard;
 use crate::board_move::BoardMove;
 use crate::board_position::BoardPosition;
-use crate::pieces::{Piece, PieceColor, PieceType};
+use crate::pieces::color::PieceColor;
+use crate::pieces::piece_type::PieceType;
+use crate::pieces::Piece;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Pawn {
@@ -16,7 +18,7 @@ impl Pawn {
     fn get_possible_moves(
         &self,
         board: &CheckerBoard,
-        from: &&BoardPosition,
+        from: &BoardPosition,
         possible_forward_moves: Box<dyn Iterator<Item = u8>>,
         possible_takes: Box<dyn Iterator<Item = BoardPosition>>,
     ) -> Vec<BoardPosition> {
@@ -108,7 +110,7 @@ impl Pawn {
         board: &CheckerBoard,
     ) -> Box<dyn Iterator<Item = BoardPosition>> {
         if board.is_last_row_for_white(from) {
-            return Box::new(vec![].into_iter());
+            return Box::new([].into_iter());
         }
         if board.is_far_left_side(from) {
             return Box::new(vec![BoardPosition::new(from.x() + 1, from.y() + 1)].into_iter());
@@ -129,7 +131,7 @@ impl Pawn {
         board: &CheckerBoard,
     ) -> Box<dyn Iterator<Item = BoardPosition>> {
         if board.is_last_row_for_black(from) {
-            return Box::new(vec![].into_iter());
+            return Box::new([].into_iter());
         }
         if board.is_far_left_side(from) {
             return Box::new(vec![BoardPosition::new(from.x() + 1, from.y() - 1)].into_iter());
@@ -220,8 +222,10 @@ mod white_pawn_tests {
     use crate::board_piece::BoardPiece;
     use crate::board_pos;
     use crate::board_position::BoardPosition;
+    use crate::pieces::color::PieceColor;
     use crate::pieces::pawn::Pawn;
-    use crate::pieces::{Piece, PieceColor, PieceType};
+    use crate::pieces::piece_type::PieceType;
+    use crate::pieces::Piece;
     use std::str::FromStr;
 
     #[test]
