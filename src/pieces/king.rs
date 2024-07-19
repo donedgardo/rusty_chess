@@ -25,7 +25,7 @@ impl Piece for King {
     }
 
     fn moves(&self, board: &CheckerBoard, from: &BoardPosition) -> Vec<BoardPosition> {
-        let eight_directions: Vec<(i8, i8)> = vec![
+        let eight_directions: [(i8, i8); 8] = [
             (0, 1),
             (0, -1),
             (-1, 0),
@@ -41,6 +41,11 @@ impl Piece for King {
             .filter(|direction| board.is_pos_valid(direction))
             .map(|direction| BoardPosition::new(direction.0 as u8, direction.1 as u8))
             .filter(|position| board.pos_is_occupied_with_color(position, self.color()))
+            .filter(|position| {
+                let mut prediction_board = board.clone();
+                prediction_board.move_piece(from, &position);
+                !prediction_board.is_checked(&self.color)
+            })
             .collect()
     }
 
@@ -169,6 +174,17 @@ mod king_tests {
         let board = CheckerBoard::with_pieces(pieces);
         let moves = board.get_possible_moves(&board_pos!("d4"));
         assert!(moves.contains(&board_pos!("d5")));
+    }
+
+    #[test]
+    fn cant_move_into_check() {
+        let kd4 = BoardPiece::build(PieceType::King, PieceColor::White, "d4");
+        let d5 = BoardPiece::build(PieceType::Pawn, PieceColor::Black, "d5");
+        let pieces = vec![kd4, d5];
+        let board = CheckerBoard::with_pieces(pieces);
+        let moves = board.get_possible_moves(&board_pos!("d4"));
+        assert!(!moves.contains(&board_pos!("c4")));
+        assert!(!moves.contains(&board_pos!("e4")));
     }
 
     fn put_king_in_empty_board(pos: &str) -> Vec<BoardPosition> {

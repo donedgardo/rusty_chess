@@ -2,9 +2,11 @@ use crate::board_move::BoardMove;
 use crate::board_piece::BoardPiece;
 use crate::board_position::BoardPosition;
 use crate::pieces::color::PieceColor;
+use crate::pieces::piece_type::PieceType;
 use crate::pieces::Piece;
 use std::collections::HashMap;
 
+#[derive(Clone)]
 pub struct CheckerBoard {
     moves: Vec<BoardMove>,
     pieces: HashMap<BoardPosition, Box<dyn Piece>>,
@@ -98,8 +100,28 @@ impl CheckerBoard {
         };
     }
 
-    pub fn is_checked(&self, _color: &PieceColor) -> bool {
-        false
+    pub fn is_checked(&self, color: &PieceColor) -> bool {
+        let mut king_pos: Option<&BoardPosition> = None;
+        let opponent_moves = self
+            .pieces
+            .iter()
+            .filter(|(pos, piece)| {
+                if Self::is_king(piece, color) {
+                    king_pos = Some(pos);
+                }
+                piece.is_opponent(color)
+            })
+            .map(|(pos, piece)| piece.moves(&self, pos))
+            .flatten()
+            .collect::<Vec<BoardPosition>>();
+        return match king_pos {
+            None => false,
+            Some(pos) => opponent_moves.contains(pos),
+        };
+    }
+
+    fn is_king(piece: &Box<dyn Piece>, color: &PieceColor) -> bool {
+        piece.piece_type() == &PieceType::King && piece.color() == color
     }
 }
 
@@ -299,11 +321,28 @@ mod chess_board_tests {
         let board = CheckerBoard::with_pieces(pieces);
         assert!(!board.pos_is_occupied_with_color(&board_pos!("a4"), &PieceColor::White));
     }
-
     #[test]
     fn empty_board_no_one_is_checked() {
         let board = CheckerBoard::new();
         assert!(!board.is_checked(&PieceColor::White));
         assert!(!board.is_checked(&PieceColor::Black));
+    }
+    #[test]
+    fn king_not_being_attacked_board_is_not_checked() {
+        let pieces = vec![
+            BoardPiece::build(PieceType::Pawn, PieceColor::White, "e3"),
+            BoardPiece::build(PieceType::King, PieceColor::Black, "e4"),
+        ];
+        let board = CheckerBoard::with_pieces(pieces);
+        assert!(!board.is_checked(&PieceColor::Black));
+    }
+    #[test]
+    fn king_attacked_board_is_checked() {
+        let pieces = vec![
+            BoardPiece::build(PieceType::Pawn, PieceColor::White, "e4"),
+            BoardPiece::build(PieceType::King, PieceColor::Black, "d5"),
+        ];
+        let board = CheckerBoard::with_pieces(pieces);
+        assert!(board.is_checked(&PieceColor::Black));
     }
 }

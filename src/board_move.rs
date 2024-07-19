@@ -1,6 +1,7 @@
 use crate::board_position::BoardPosition;
 use crate::pieces::piece_type::PieceType;
 
+#[derive(Clone)]
 pub struct BoardMove(PieceType, BoardPosition, BoardPosition);
 impl BoardMove {
     pub fn new(piece_type: PieceType, from: BoardPosition, to: BoardPosition) -> Self {

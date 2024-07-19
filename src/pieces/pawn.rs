@@ -209,6 +209,13 @@ impl Piece for Pawn {
             moves.push(en_passant_take);
         }
         moves
+            .into_iter()
+            .filter(|pos| {
+                let mut board_prediction = board.clone();
+                board_prediction.move_piece(&from, pos);
+                !board_prediction.is_checked(&self.color())
+            })
+            .collect()
     }
     fn is_opponent(&self, color: &PieceColor) -> bool {
         &self.color != color
@@ -457,6 +464,17 @@ mod white_pawn_tests {
         board.move_piece(&board_pos!["b7"], &board_pos!["b5"]);
         let moves = board.get_possible_moves(&board_pos!("c5"));
         assert!(moves.contains(&board_pos!("b6")));
+    }
+
+    #[test]
+    fn cant_move_into_a_check() {
+        let e4 = BoardPiece::build(PieceType::Pawn, PieceColor::White, "e4");
+        let kc4 = BoardPiece::build(PieceType::King, PieceColor::White, "c4");
+        let d5 = BoardPiece::build(PieceType::Pawn, PieceColor::Black, "d5");
+        let pieces = vec![kc4, e4, d5];
+        let board = CheckerBoard::with_pieces(pieces);
+        let moves = board.get_possible_moves(&board_pos!("e4"));
+        assert!(!moves.contains(&board_pos!("e5")));
     }
 }
 
