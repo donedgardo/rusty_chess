@@ -113,12 +113,12 @@ impl Pawn {
             return Box::new([].into_iter());
         }
         if board.is_far_left_side(from) {
-            return Box::new(vec![BoardPosition::new(from.x() + 1, from.y() + 1)].into_iter());
+            return Box::new([BoardPosition::new(from.x() + 1, from.y() + 1)].into_iter());
         } else if board.is_far_right_side(from) {
-            return Box::new(vec![BoardPosition::new(from.x() - 1, from.y() + 1)].into_iter());
+            return Box::new([BoardPosition::new(from.x() - 1, from.y() + 1)].into_iter());
         }
         return Box::new(
-            vec![
+            [
                 BoardPosition::new(from.x() - 1, from.y() + 1),
                 BoardPosition::new(from.x() + 1, from.y() + 1),
             ]

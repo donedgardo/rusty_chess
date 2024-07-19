@@ -24,12 +24,12 @@ impl Piece for Knight {
     }
 
     fn moves(&self, board: &CheckerBoard, from: &BoardPosition) -> Vec<BoardPosition> {
-        let mut moves: Vec<(i8, i8)> = Vec::with_capacity(8);
-        for m in [(1, 2), (2, 1)] {
-            moves.push((from.x() as i8 + m.0, from.y() as i8 + m.1));
-            moves.push((from.x() as i8 + m.0, from.y() as i8 - m.1));
-            moves.push((from.x() as i8 - m.0, from.y() as i8 + m.1));
-            moves.push((from.x() as i8 - m.0, from.y() as i8 - m.1));
+        let mut moves: [(i8, i8); 8] = [(0, 0); 8];
+        for (i, m) in [(1, 2), (2, 1)].iter().enumerate() {
+            moves[(i * 4) + 0] = (from.x() as i8 + m.0, from.y() as i8 + m.1);
+            moves[(i * 4) + 1] = (from.x() as i8 + m.0, from.y() as i8 - m.1);
+            moves[(i * 4) + 2] = (from.x() as i8 - m.0, from.y() as i8 + m.1);
+            moves[(i * 4) + 3] = (from.x() as i8 - m.0, from.y() as i8 - m.1);
         }
         moves
             .into_iter()
