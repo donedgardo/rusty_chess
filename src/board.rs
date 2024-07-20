@@ -58,7 +58,7 @@ impl CheckerBoard {
         let piece = self.pieces.get(position);
         match piece {
             None => vec![],
-            Some(piece) => piece.moves(&self, position),
+            Some(piece) => piece.get_valid_moves(&self, position),
         }
     }
 
@@ -111,13 +111,38 @@ impl CheckerBoard {
                 }
                 piece.is_opponent(color)
             })
-            .map(|(pos, piece)| piece.moves(&self, pos))
+            .map(|(pos, piece)| piece.get_all_moves(&self, pos))
             .flatten()
             .collect::<Vec<BoardPosition>>();
         return match king_pos {
             None => false,
             Some(pos) => opponent_moves.contains(pos),
         };
+    }
+    pub fn is_mated(&self, color: &PieceColor) -> bool {
+        if !self.is_checked(color) {
+            return false;
+        }
+        let possible_moves = self.get_moves_for_color(color);
+        possible_moves.is_empty()
+    }
+
+    pub fn is_draw(&self) -> bool {
+        let colors = [PieceColor::Black, PieceColor::White];
+        colors
+            .iter()
+            .any(|color| self.get_moves_for_color(color).is_empty())
+    }
+
+    fn get_moves_for_color(&self, color: &PieceColor) -> Vec<BoardPosition> {
+        let possible_moves = self
+            .pieces
+            .iter()
+            .filter(|(_, piece)| !piece.is_opponent(color))
+            .map(|(pos, piece)| piece.get_valid_moves(&self, pos))
+            .flatten()
+            .collect::<Vec<BoardPosition>>();
+        possible_moves
     }
 
     fn is_king(piece: &Box<dyn Piece>, color: &PieceColor) -> bool {
@@ -344,5 +369,48 @@ mod chess_board_tests {
         ];
         let board = CheckerBoard::with_pieces(pieces);
         assert!(board.is_checked(&PieceColor::Black));
+    }
+
+    #[test]
+    fn king_attacked_with_a_way_out_is_not_checkmated() {
+        let pieces = vec![
+            BoardPiece::build(PieceType::Pawn, PieceColor::White, "e4"),
+            BoardPiece::build(PieceType::King, PieceColor::Black, "d5"),
+        ];
+        let board = CheckerBoard::with_pieces(pieces);
+        assert!(!board.is_mated(&PieceColor::Black));
+    }
+
+    #[test]
+    fn king_attacked_with_no_way_out_is_checkmated() {
+        let pieces = vec![
+            BoardPiece::build(PieceType::Pawn, PieceColor::White, "a7"),
+            BoardPiece::build(PieceType::Pawn, PieceColor::White, "b7"),
+            BoardPiece::build(PieceType::King, PieceColor::White, "a6"),
+            BoardPiece::build(PieceType::King, PieceColor::Black, "a8"),
+        ];
+        let board = CheckerBoard::with_pieces(pieces);
+        assert!(board.is_mated(&PieceColor::Black));
+    }
+
+    #[test]
+    fn king_un_attacked_with_no_way_out_is_not_checkmate() {
+        let pieces = vec![
+            BoardPiece::build(PieceType::King, PieceColor::White, "h1"),
+            BoardPiece::build(PieceType::Pawn, PieceColor::Black, "h2"),
+            BoardPiece::build(PieceType::King, PieceColor::Black, "g3"),
+        ];
+        let board = CheckerBoard::with_pieces(pieces);
+        assert!(!board.is_mated(&PieceColor::White));
+    }
+    #[test]
+    fn king_un_attacked_with_no_way_out_is_draw() {
+        let pieces = vec![
+            BoardPiece::build(PieceType::King, PieceColor::White, "h1"),
+            BoardPiece::build(PieceType::Pawn, PieceColor::Black, "h2"),
+            BoardPiece::build(PieceType::King, PieceColor::Black, "g3"),
+        ];
+        let board = CheckerBoard::with_pieces(pieces);
+        assert!(board.is_draw());
     }
 }

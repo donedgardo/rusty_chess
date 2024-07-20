@@ -1,4 +1,3 @@
-use crate::board::CheckerBoard;
 use crate::board_position::BoardPosition;
 use crate::pieces::color::PieceColor;
 use crate::pieces::king::King;
@@ -25,10 +24,6 @@ impl BoardPiece {
     }
     pub fn piece(&self) -> &Box<dyn Piece> {
         &self.1
-    }
-
-    pub fn moves(&self, board: &CheckerBoard) -> Vec<BoardPosition> {
-        self.piece().moves(&board, self.pos())
     }
 }
 

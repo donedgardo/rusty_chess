@@ -24,7 +24,18 @@ impl Piece for King {
         &PieceType::King
     }
 
-    fn moves(&self, board: &CheckerBoard, from: &BoardPosition) -> Vec<BoardPosition> {
+    fn get_valid_moves(&self, board: &CheckerBoard, from: &BoardPosition) -> Vec<BoardPosition> {
+        self.get_all_moves(board, from)
+            .into_iter()
+            .filter(|position| {
+                let mut prediction_board = board.clone();
+                prediction_board.move_piece(from, &position);
+                !prediction_board.is_checked(&self.color)
+            })
+            .collect()
+    }
+
+    fn get_all_moves(&self, board: &CheckerBoard, from: &BoardPosition) -> Vec<BoardPosition> {
         let eight_directions: [(i8, i8); 8] = [
             (0, 1),
             (0, -1),
@@ -41,11 +52,7 @@ impl Piece for King {
             .filter(|direction| board.is_pos_valid(direction))
             .map(|direction| BoardPosition::new(direction.0 as u8, direction.1 as u8))
             .filter(|position| board.pos_is_occupied_with_color(position, self.color()))
-            .filter(|position| {
-                let mut prediction_board = board.clone();
-                prediction_board.move_piece(from, &position);
-                !prediction_board.is_checked(&self.color)
-            })
+            .into_iter()
             .collect()
     }
 

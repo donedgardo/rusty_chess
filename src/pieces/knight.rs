@@ -23,7 +23,11 @@ impl Piece for Knight {
         &PieceType::Knight
     }
 
-    fn moves(&self, board: &CheckerBoard, from: &BoardPosition) -> Vec<BoardPosition> {
+    fn get_valid_moves(&self, board: &CheckerBoard, from: &BoardPosition) -> Vec<BoardPosition> {
+        self.get_all_moves(board, from)
+    }
+
+    fn get_all_moves(&self, board: &CheckerBoard, from: &BoardPosition) -> Vec<BoardPosition> {
         let mut moves: [(i8, i8); 8] = [(0, 0); 8];
         for (i, m) in [(1, 2), (2, 1)].iter().enumerate() {
             moves[(i * 4) + 0] = (from.x() as i8 + m.0, from.y() as i8 + m.1);
@@ -189,4 +193,8 @@ mod knight_piece_tests {
             assert_eq!(moves.len(), 2);
         }
     }
+
+    #[test]
+    #[ignore]
+    fn cant_move_into_check() {}
 }

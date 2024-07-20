@@ -12,10 +12,16 @@ pub mod piece_type;
 pub trait Piece: CloneBox {
     fn color(&self) -> &PieceColor;
     fn piece_type(&self) -> &PieceType;
-    fn moves(&self, board: &CheckerBoard, from: &BoardPosition) -> Vec<BoardPosition>;
+    fn get_valid_moves(&self, board: &CheckerBoard, from: &BoardPosition) -> Vec<BoardPosition>;
+    fn get_all_moves(&self, board: &CheckerBoard, from: &BoardPosition) -> Vec<BoardPosition>;
     fn is_opponent(&self, color: &PieceColor) -> bool;
 }
 
+// TODO: Possible refactor
+// Maybe we can  remove CloneBox by just having a factory of piece
+// so we don't have to clone Box<dyn Piece> in board.with_pieces
+// We can then remove the clones from test by passing a ref in spawn
+// and use the factory builder
 pub trait CloneBox {
     fn clone_box(&self) -> Box<dyn Piece>;
 }

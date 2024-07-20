@@ -199,7 +199,18 @@ impl Piece for Pawn {
     fn piece_type(&self) -> &PieceType {
         &PieceType::Pawn
     }
-    fn moves(&self, board: &CheckerBoard, from: &BoardPosition) -> Vec<BoardPosition> {
+    fn get_valid_moves(&self, board: &CheckerBoard, from: &BoardPosition) -> Vec<BoardPosition> {
+        self.get_all_moves(board, from)
+            .into_iter()
+            .filter(|pos| {
+                let mut board_prediction = board.clone();
+                board_prediction.move_piece(&from, pos);
+                !board_prediction.is_checked(&self.color())
+            })
+            .collect()
+    }
+
+    fn get_all_moves(&self, board: &CheckerBoard, from: &BoardPosition) -> Vec<BoardPosition> {
         let possible_forward_moves = self.get_most_forward_moves(from, board);
         let possible_takes = self.get_possible_take_positions(from, board);
         let mut moves =
@@ -209,14 +220,8 @@ impl Piece for Pawn {
             moves.push(en_passant_take);
         }
         moves
-            .into_iter()
-            .filter(|pos| {
-                let mut board_prediction = board.clone();
-                board_prediction.move_piece(&from, pos);
-                !board_prediction.is_checked(&self.color())
-            })
-            .collect()
     }
+
     fn is_opponent(&self, color: &PieceColor) -> bool {
         &self.color != color
     }
