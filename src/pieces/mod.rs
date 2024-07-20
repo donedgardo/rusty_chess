@@ -4,10 +4,12 @@ use color::PieceColor;
 use piece_type::PieceType;
 
 pub mod color;
+pub mod factory;
 pub mod king;
 pub mod knight;
 pub mod pawn;
 pub mod piece_type;
+pub mod rook;
 
 pub trait Piece: CloneBox {
     fn color(&self) -> &PieceColor;
@@ -17,11 +19,6 @@ pub trait Piece: CloneBox {
     fn is_opponent(&self, color: &PieceColor) -> bool;
 }
 
-// TODO: Possible refactor
-// Maybe we can  remove CloneBox by just having a factory of piece
-// so we don't have to clone Box<dyn Piece> in board.with_pieces
-// We can then remove the clones from test by passing a ref in spawn
-// and use the factory builder
 pub trait CloneBox {
     fn clone_box(&self) -> Box<dyn Piece>;
 }

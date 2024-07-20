@@ -3,4 +3,5 @@ pub enum PieceType {
     Pawn,
     Knight,
     King,
+    Rook,
 }

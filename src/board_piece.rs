@@ -1,8 +1,6 @@
 use crate::board_position::BoardPosition;
 use crate::pieces::color::PieceColor;
-use crate::pieces::king::King;
-use crate::pieces::knight::Knight;
-use crate::pieces::pawn::Pawn;
+use crate::pieces::factory::PieceFactory;
 use crate::pieces::piece_type::PieceType;
 use crate::pieces::Piece;
 
@@ -10,13 +8,10 @@ pub struct BoardPiece(BoardPosition, Box<dyn Piece>);
 
 impl BoardPiece {
     pub fn build(piece_type: PieceType, color: PieceColor, position: &str) -> Self {
-        match piece_type {
-            PieceType::Pawn => BoardPiece(position.parse().unwrap(), Box::new(Pawn::new(color))),
-            PieceType::Knight => {
-                BoardPiece(position.parse().unwrap(), Box::new(Knight::new(color)))
-            }
-            PieceType::King => BoardPiece(position.parse().unwrap(), Box::new(King::new(color))),
-        }
+        BoardPiece(
+            position.parse().unwrap(),
+            PieceFactory::build(piece_type, color),
+        )
     }
 
     pub fn pos(&self) -> &BoardPosition {

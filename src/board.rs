@@ -2,6 +2,7 @@ use crate::board_move::BoardMove;
 use crate::board_piece::BoardPiece;
 use crate::board_position::BoardPosition;
 use crate::pieces::color::PieceColor;
+use crate::pieces::factory::PieceFactory;
 use crate::pieces::piece_type::PieceType;
 use crate::pieces::Piece;
 use std::collections::HashMap;
@@ -22,8 +23,14 @@ impl CheckerBoard {
 
     pub fn with_pieces(pieces: Vec<BoardPiece>) -> Self {
         let mut pieces_map = HashMap::new();
-        for piece in pieces {
-            pieces_map.insert(piece.pos().clone(), piece.piece().clone_box());
+        for board_piece in pieces {
+            pieces_map.insert(
+                board_piece.pos().clone(),
+                PieceFactory::build(
+                    board_piece.piece().piece_type().clone(),
+                    board_piece.piece().color().clone(),
+                ),
+            );
         }
         Self {
             pieces: pieces_map,
@@ -33,8 +40,9 @@ impl CheckerBoard {
     pub fn is_empty(&self) -> bool {
         self.pieces.is_empty()
     }
-    pub fn spawn(&mut self, position: &BoardPosition, piece: Box<dyn Piece>) {
-        self.pieces.insert(position.clone(), piece);
+    pub fn spawn(&mut self, position: &BoardPosition, piece_type: PieceType, color: PieceColor) {
+        self.pieces
+            .insert(position.clone(), PieceFactory::build(piece_type, color));
     }
     pub fn despawn(&mut self, position: &BoardPosition) {
         self.pieces.remove(position);
@@ -157,7 +165,6 @@ mod chess_board_tests {
     use crate::board_pos;
     use crate::board_position::BoardPosition;
     use crate::pieces::color::PieceColor;
-    use crate::pieces::pawn::Pawn;
     use crate::pieces::piece_type::PieceType;
     use std::str::FromStr;
 
@@ -170,9 +177,8 @@ mod chess_board_tests {
     #[test]
     fn it_can_spawn_pieces() {
         let mut board = CheckerBoard::new();
-        let pawn = Box::new(Pawn::new(PieceColor::Black));
         let position = BoardPosition::new(0, 0);
-        board.spawn(&position, pawn.clone());
+        board.spawn(&position, PieceType::Pawn, PieceColor::Black);
         let piece = board.piece_at(&position).unwrap();
         assert_eq!(piece.color(), &PieceColor::Black);
         assert_eq!(piece.piece_type(), &PieceType::Pawn);
@@ -182,9 +188,8 @@ mod chess_board_tests {
     #[test]
     fn it_can_despawn_pieces() {
         let mut board = CheckerBoard::new();
-        let pawn = Pawn::new(PieceColor::Black);
         let position = BoardPosition::new(0, 0);
-        board.spawn(&position, Box::new(pawn));
+        board.spawn(&position, PieceType::Pawn, PieceColor::Black);
         board.despawn(&position);
         let piece = board.piece_at(&position);
         assert!(piece.is_none());
@@ -194,9 +199,8 @@ mod chess_board_tests {
     #[test]
     fn it_can_move_pieces() {
         let mut board = CheckerBoard::new();
-        let pawn = Box::new(Pawn::new(PieceColor::Black));
         let position = BoardPosition::new(0, 0);
-        board.spawn(&position, pawn.clone());
+        board.spawn(&position, PieceType::Pawn, PieceColor::Black);
         let new_position = BoardPosition::new(1, 1);
         board.move_piece(&position, &new_position);
         let piece_at_old_pos = board.piece_at(&position);
