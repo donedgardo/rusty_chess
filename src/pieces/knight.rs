@@ -23,10 +23,6 @@ impl Piece for Knight {
         &PieceType::Knight
     }
 
-    fn get_valid_moves(&self, board: &CheckerBoard, from: &BoardPosition) -> Vec<BoardPosition> {
-        self.get_all_moves(board, from)
-    }
-
     fn get_all_moves(&self, board: &CheckerBoard, from: &BoardPosition) -> Vec<BoardPosition> {
         let mut moves: [(i8, i8); 8] = [(0, 0); 8];
         for (i, m) in [(1, 2), (2, 1)].iter().enumerate() {
@@ -195,6 +191,13 @@ mod knight_piece_tests {
     }
 
     #[test]
-    #[ignore]
-    fn cant_move_into_check() {}
+    fn cant_move_into_check() {
+        let kd3 = BoardPiece::build(PieceType::King, PieceColor::White, "d3");
+        let nd4 = BoardPiece::build(PieceType::Knight, PieceColor::White, "d4");
+        let rd5 = BoardPiece::build(PieceType::Rook, PieceColor::Black, "d5");
+        let pieces = vec![kd3, nd4, rd5];
+        let board = CheckerBoard::with_pieces(pieces);
+        let moves = board.get_possible_moves(&board_pos!("d4"));
+        assert!(moves.is_empty());
+    }
 }

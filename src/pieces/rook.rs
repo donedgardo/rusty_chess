@@ -21,59 +21,56 @@ impl Rook {
         moves: &mut Vec<BoardPosition>,
     ) {
         for x in (0..from.x()).rev() {
-            if self.it_should_stop_moving(board, from, moves, x) {
+            if self.it_should_stop_moving(board, moves, x, from.y()) {
                 break;
             }
         }
         for x in from.x() + 1..board.width() {
-            if self.it_should_stop_moving(board, from, moves, x) {
+            if self.it_should_stop_moving(board, moves, x, from.y()) {
                 break;
             }
         }
     }
 
     fn add_vertical_moves(
+        &self,
         board: &CheckerBoard,
         from: &BoardPosition,
         moves: &mut Vec<BoardPosition>,
     ) {
         for y in from.y() + 1..board.length() {
-            let pos = BoardPosition::new(from.x(), y);
-            if board.piece_at(&pos).is_some() {
+            if self.it_should_stop_moving(board, moves, from.x(), y) {
                 break;
             }
-            moves.push(pos);
         }
         for y in (0..from.y()).rev() {
-            let pos = BoardPosition::new(from.x(), y);
-            if board.piece_at(&pos).is_some() {
+            if self.it_should_stop_moving(board, moves, from.x(), y) {
                 break;
             }
-            moves.push(pos);
         }
     }
 
     fn it_should_stop_moving(
         &self,
         board: &CheckerBoard,
-        from: &BoardPosition,
         moves: &mut Vec<BoardPosition>,
         x: u8,
+        y: u8,
     ) -> bool {
-        let pos = BoardPosition::new(x, from.y());
+        let pos = BoardPosition::new(x, y);
         let board_piece = board.piece_at(&pos);
-        match board_piece {
+        return match board_piece {
             None => {
                 moves.push(pos);
+                false
             }
             Some(piece) => {
                 if self.is_opponent(piece.color()) {
                     moves.push(pos);
                 }
-                return true;
+                true
             }
-        }
-        false
+        };
     }
 }
 
@@ -86,14 +83,10 @@ impl Piece for Rook {
         &PieceType::Rook
     }
 
-    fn get_valid_moves(&self, board: &CheckerBoard, from: &BoardPosition) -> Vec<BoardPosition> {
-        self.get_all_moves(board, from)
-    }
-
     fn get_all_moves(&self, board: &CheckerBoard, from: &BoardPosition) -> Vec<BoardPosition> {
         let mut moves: Vec<BoardPosition> = Vec::with_capacity(16);
         self.add_horizontal_moves(board, from, &mut moves);
-        Self::add_vertical_moves(board, from, &mut moves);
+        self.add_vertical_moves(board, from, &mut moves);
         moves
     }
 
@@ -101,6 +94,7 @@ impl Piece for Rook {
         &self.color != color
     }
 }
+
 #[cfg(test)]
 mod rook_test {
     use crate::board::CheckerBoard;
@@ -262,6 +256,60 @@ mod rook_test {
             assert!(!moves.contains(&board_pos!(pos)));
         }
         let legal_vertical_moves = ["e1", "f1", "g1"];
+        for pos in legal_vertical_moves {
+            assert!(moves.contains(&board_pos!(pos)));
+        }
+    }
+
+    #[test]
+    fn can_vertically_move_up_to_top_pieces_of_different_color() {
+        let a1 = "a1";
+        let ra1 = BoardPiece::build(PieceType::Rook, PieceColor::White, a1);
+        let a5 = BoardPiece::build(PieceType::Pawn, PieceColor::Black, "a5");
+        let pieces = vec![ra1, a5];
+        let board = CheckerBoard::with_pieces(pieces);
+        let moves = board.get_possible_moves(&board_pos!(a1));
+        let illegal_vertical_moves = ["a6", "a7", "a8"];
+        for pos in illegal_vertical_moves {
+            assert!(!moves.contains(&board_pos!(pos)));
+        }
+        let legal_vertical_moves = ["a2", "a3", "a4", "a5"];
+        for pos in legal_vertical_moves {
+            assert!(moves.contains(&board_pos!(pos)));
+        }
+    }
+
+    #[test]
+    fn can_vertically_move_up_to_bottom_pieces_of_different_color() {
+        let a8 = "a8";
+        let ra8 = BoardPiece::build(PieceType::Rook, PieceColor::White, a8);
+        let a5 = BoardPiece::build(PieceType::Pawn, PieceColor::Black, "a5");
+        let pieces = vec![ra8, a5];
+        let board = CheckerBoard::with_pieces(pieces);
+        let moves = board.get_possible_moves(&board_pos!(a8));
+        let illegal_vertical_moves = ["a4", "a3", "a2", "a1"];
+        for pos in illegal_vertical_moves {
+            assert!(!moves.contains(&board_pos!(pos)));
+        }
+        let legal_vertical_moves = ["a6", "a7"];
+        for pos in legal_vertical_moves {
+            assert!(moves.contains(&board_pos!(pos)));
+        }
+    }
+
+    #[test]
+    fn can_not_move_into_check() {
+        let ka1 = BoardPiece::build(PieceType::King, PieceColor::White, "a1");
+        let ra2 = BoardPiece::build(PieceType::Rook, PieceColor::White, "a2");
+        let ra3 = BoardPiece::build(PieceType::Rook, PieceColor::Black, "a3");
+        let pieces = vec![ka1, ra2, ra3];
+        let board = CheckerBoard::with_pieces(pieces);
+        let moves = board.get_possible_moves(&board_pos!("a2"));
+        let illegal_vertical_moves = ["a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2"];
+        for pos in illegal_vertical_moves {
+            assert!(!moves.contains(&board_pos!(pos)));
+        }
+        let legal_vertical_moves = ["a3"];
         for pos in legal_vertical_moves {
             assert!(moves.contains(&board_pos!(pos)));
         }

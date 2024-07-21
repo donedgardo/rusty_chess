@@ -66,7 +66,15 @@ impl CheckerBoard {
         let piece = self.pieces.get(position);
         match piece {
             None => vec![],
-            Some(piece) => piece.get_valid_moves(&self, position),
+            Some(piece) => piece
+                .get_all_moves(&self, position)
+                .into_iter()
+                .filter(|pos| {
+                    let mut prediction_board = self.clone();
+                    prediction_board.move_piece(position, &pos);
+                    !prediction_board.is_checked(piece.color())
+                })
+                .collect(),
         }
     }
 
@@ -147,7 +155,7 @@ impl CheckerBoard {
             .pieces
             .iter()
             .filter(|(_, piece)| !piece.is_opponent(color))
-            .map(|(pos, piece)| piece.get_valid_moves(&self, pos))
+            .map(|(pos, _)| self.get_possible_moves(pos))
             .flatten()
             .collect::<Vec<BoardPosition>>();
         possible_moves

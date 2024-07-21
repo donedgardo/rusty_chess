@@ -14,7 +14,6 @@ pub mod rook;
 pub trait Piece: CloneBox {
     fn color(&self) -> &PieceColor;
     fn piece_type(&self) -> &PieceType;
-    fn get_valid_moves(&self, board: &CheckerBoard, from: &BoardPosition) -> Vec<BoardPosition>;
     fn get_all_moves(&self, board: &CheckerBoard, from: &BoardPosition) -> Vec<BoardPosition>;
     fn is_opponent(&self, color: &PieceColor) -> bool;
 }

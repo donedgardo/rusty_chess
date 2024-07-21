@@ -199,16 +199,6 @@ impl Piece for Pawn {
     fn piece_type(&self) -> &PieceType {
         &PieceType::Pawn
     }
-    fn get_valid_moves(&self, board: &CheckerBoard, from: &BoardPosition) -> Vec<BoardPosition> {
-        self.get_all_moves(board, from)
-            .into_iter()
-            .filter(|pos| {
-                let mut board_prediction = board.clone();
-                board_prediction.move_piece(&from, pos);
-                !board_prediction.is_checked(&self.color())
-            })
-            .collect()
-    }
 
     fn get_all_moves(&self, board: &CheckerBoard, from: &BoardPosition) -> Vec<BoardPosition> {
         let possible_forward_moves = self.get_most_forward_moves(from, board);
