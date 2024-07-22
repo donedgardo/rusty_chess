@@ -63,12 +63,14 @@ impl BoardUiFactory {
                         PieceType::Knight => Some(9),
                         PieceType::King => Some(10),
                         PieceType::Rook => Some(7),
+                        PieceType::Bishop => Some(8),
                     },
                     PieceColor::Black => match piece.piece_type() {
                         PieceType::Pawn => Some(0),
                         PieceType::Knight => Some(3),
                         PieceType::King => Some(4),
                         PieceType::Rook => Some(1),
+                        PieceType::Bishop => Some(2),
                     },
                 }
             }
@@ -210,6 +212,25 @@ mod board_positions_test {
         assert_eq!(
             board_ui_factory.get_sprite_index(&board_pos!("e8")),
             Some(4)
+        );
+    }
+
+    #[test]
+    fn sprite_sheet_returns_index_for_white_bishop() {
+        let board = CheckerBoard::default();
+        let board_ui_factory = create_board_ui_factory(68.5, 72., board);
+        assert_eq!(
+            board_ui_factory.get_sprite_index(&board_pos!("c1")),
+            Some(8)
+        );
+    }
+    #[test]
+    fn sprite_sheet_returns_index_for_black_bishop() {
+        let board = CheckerBoard::default();
+        let board_ui_factory = create_board_ui_factory(68.5, 72., board);
+        assert_eq!(
+            board_ui_factory.get_sprite_index(&board_pos!("c8")),
+            Some(2)
         );
     }
 

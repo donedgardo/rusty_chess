@@ -63,6 +63,18 @@ impl CheckerBoard {
                 PieceColor::Black,
             );
         }
+        for x in [2, 5] {
+            board.spawn(
+                &BoardPosition::new(x, 0),
+                PieceType::Bishop,
+                PieceColor::White,
+            );
+            board.spawn(
+                &BoardPosition::new(x, 7),
+                PieceType::Bishop,
+                PieceColor::Black,
+            );
+        }
         board.spawn(
             &BoardPosition::new(4, 0),
             PieceType::King,
@@ -544,6 +556,30 @@ mod chess_board_tests {
             board,
             knight_positions.into_iter(),
             &PieceType::Knight,
+            &PieceColor::Black,
+        );
+    }
+
+    #[test]
+    fn default_board_has_all_white_bishops() {
+        let board = CheckerBoard::default();
+        let bishop_positions = [board_pos!("c1"), board_pos!("f1")];
+        assert_all_pos_have_pieces(
+            board,
+            bishop_positions.into_iter(),
+            &PieceType::Bishop,
+            &PieceColor::White,
+        );
+    }
+
+    #[test]
+    fn default_board_has_all_black_bishops() {
+        let board = CheckerBoard::default();
+        let bishop_positions = [board_pos!("c8"), board_pos!("f8")];
+        assert_all_pos_have_pieces(
+            board,
+            bishop_positions.into_iter(),
+            &PieceType::Bishop,
             &PieceColor::Black,
         );
     }

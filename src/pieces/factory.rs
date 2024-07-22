@@ -1,3 +1,4 @@
+use crate::pieces::bishop::Bishop;
 use crate::pieces::color::PieceColor;
 use crate::pieces::king::King;
 use crate::pieces::knight::Knight;
@@ -15,6 +16,7 @@ impl PieceFactory {
             PieceType::Knight => Box::new(Knight::new(color)),
             PieceType::King => Box::new(King::new(color)),
             PieceType::Rook => Box::new(Rook::new(color)),
+            PieceType::Bishop => Box::new(Bishop::new(color)),
         };
     }
 }
@@ -51,5 +53,12 @@ mod piece_factory_tests {
         let pawn = PieceFactory::build(PieceType::Rook, PieceColor::Black);
         assert_eq!(pawn.piece_type(), &PieceType::Rook);
         assert_eq!(pawn.color(), &PieceColor::Black);
+    }
+
+    #[test]
+    fn can_build_bishop_from_type() {
+        let pawn = PieceFactory::build(PieceType::Bishop, PieceColor::White);
+        assert_eq!(pawn.piece_type(), &PieceType::Bishop);
+        assert_eq!(pawn.color(), &PieceColor::White);
     }
 }

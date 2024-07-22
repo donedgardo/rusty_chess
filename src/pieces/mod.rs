@@ -3,6 +3,7 @@ use crate::board_position::BoardPosition;
 use color::PieceColor;
 use piece_type::PieceType;
 
+mod bishop;
 pub mod color;
 pub mod factory;
 pub mod king;
