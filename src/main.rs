@@ -12,6 +12,19 @@ use bevy::prelude::*;
 use bevy::sprite::{MaterialMesh2dBundle, Mesh2dHandle};
 use board_ui_factory::BoardUiFactory;
 
+//TODO:
+// * Finish Bishop
+// * Finish Queen
+// * Play Order
+// * Moving pieces via Selectable Pieces
+// * Moving pieces via Drag-drop
+// * Season cycles
+// * Seasonal Pieces
+// * AI easy
+// * Local Multiplayer
+// * Remote Multiplayer (Steam remote-local)
+// * AI - Hard Monte carlo tree search
+
 fn main() {
     let board = CheckerBoard::default();
     App::new()
