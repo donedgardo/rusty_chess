@@ -11,7 +11,7 @@ pub mod pawn;
 pub mod piece_type;
 pub mod rook;
 
-pub trait Piece: CloneBox {
+pub trait Piece: CloneBox + Send + Sync {
     fn color(&self) -> &PieceColor;
     fn piece_type(&self) -> &PieceType;
     fn get_all_moves(&self, board: &CheckerBoard, from: &BoardPosition) -> Vec<BoardPosition>;

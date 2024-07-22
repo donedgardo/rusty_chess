@@ -16,13 +16,68 @@ pub struct CheckerBoard {
 impl CheckerBoard {
     pub fn new() -> Self {
         Self {
-            pieces: HashMap::new(),
+            pieces: HashMap::with_capacity(32),
             moves: vec![],
         }
     }
 
+    pub fn default() -> Self {
+        let mut board = Self {
+            pieces: HashMap::with_capacity(32),
+            moves: vec![],
+        };
+
+        for x in 0..board.width() {
+            board.spawn(
+                &BoardPosition::new(x, 1),
+                PieceType::Pawn,
+                PieceColor::White,
+            );
+            board.spawn(
+                &BoardPosition::new(x, 6),
+                PieceType::Pawn,
+                PieceColor::Black,
+            );
+        }
+        for x in [0, 7] {
+            board.spawn(
+                &BoardPosition::new(x, 0),
+                PieceType::Rook,
+                PieceColor::White,
+            );
+            board.spawn(
+                &BoardPosition::new(x, 7),
+                PieceType::Rook,
+                PieceColor::Black,
+            );
+        }
+        for x in [1, 6] {
+            board.spawn(
+                &BoardPosition::new(x, 0),
+                PieceType::Knight,
+                PieceColor::White,
+            );
+            board.spawn(
+                &BoardPosition::new(x, 7),
+                PieceType::Knight,
+                PieceColor::Black,
+            );
+        }
+        board.spawn(
+            &BoardPosition::new(4, 0),
+            PieceType::King,
+            PieceColor::White,
+        );
+        board.spawn(
+            &BoardPosition::new(4, 7),
+            PieceType::King,
+            PieceColor::Black,
+        );
+        board
+    }
+
     pub fn with_pieces(pieces: Vec<BoardPiece>) -> Self {
-        let mut pieces_map = HashMap::new();
+        let mut pieces_map = HashMap::with_capacity(32);
         for board_piece in pieces {
             pieces_map.insert(
                 board_piece.pos().clone(),
@@ -424,5 +479,100 @@ mod chess_board_tests {
         ];
         let board = CheckerBoard::with_pieces(pieces);
         assert!(board.is_draw());
+    }
+
+    #[test]
+    fn default_board_has_all_white_pawns() {
+        let board = CheckerBoard::default();
+        for x in 0..board.width() {
+            let piece = board.piece_at(&BoardPosition::new(x, 1)).unwrap();
+            assert_eq!(piece.color(), &PieceColor::White);
+            assert_eq!(piece.piece_type(), &PieceType::Pawn);
+        }
+    }
+
+    #[test]
+    fn default_board_has_all_black_pawns() {
+        let board = CheckerBoard::default();
+        for x in 0..board.width() {
+            let piece = board.piece_at(&BoardPosition::new(x, 6)).unwrap();
+            assert_eq!(piece.color(), &PieceColor::Black);
+            assert_eq!(piece.piece_type(), &PieceType::Pawn);
+        }
+    }
+    #[test]
+    fn default_board_has_all_white_rooks() {
+        let board = CheckerBoard::default();
+        let rook_positions = [board_pos!("a1"), board_pos!("h1")];
+        assert_all_pos_have_pieces(
+            board,
+            rook_positions.into_iter(),
+            &PieceType::Rook,
+            &PieceColor::White,
+        );
+    }
+
+    #[test]
+    fn default_board_has_all_black_rooks() {
+        let board = CheckerBoard::default();
+        let rook_positions = [board_pos!("a8"), board_pos!("h8")];
+        assert_all_pos_have_pieces(
+            board,
+            rook_positions.into_iter(),
+            &PieceType::Rook,
+            &PieceColor::Black,
+        );
+    }
+
+    #[test]
+    fn default_board_has_all_white_knights() {
+        let board = CheckerBoard::default();
+        let knight_positions = [board_pos!("b1"), board_pos!("g1")];
+        assert_all_pos_have_pieces(
+            board,
+            knight_positions.into_iter(),
+            &PieceType::Knight,
+            &PieceColor::White,
+        );
+    }
+
+    #[test]
+    fn default_board_has_all_black_knights() {
+        let board = CheckerBoard::default();
+        let knight_positions = [board_pos!("b8"), board_pos!("g8")];
+        assert_all_pos_have_pieces(
+            board,
+            knight_positions.into_iter(),
+            &PieceType::Knight,
+            &PieceColor::Black,
+        );
+    }
+
+    #[test]
+    fn default_board_has_white_king() {
+        let board = CheckerBoard::default();
+        let piece = board.piece_at(&board_pos!("e1")).unwrap();
+        assert_eq!(piece.color(), &PieceColor::White);
+        assert_eq!(piece.piece_type(), &PieceType::King);
+    }
+    #[test]
+    fn default_board_has_black_king() {
+        let board = CheckerBoard::default();
+        let piece = board.piece_at(&board_pos!("e8")).unwrap();
+        assert_eq!(piece.color(), &PieceColor::Black);
+        assert_eq!(piece.piece_type(), &PieceType::King);
+    }
+
+    fn assert_all_pos_have_pieces(
+        board: CheckerBoard,
+        rook_positions: impl Iterator<Item = BoardPosition>,
+        piece_type: &PieceType,
+        color: &PieceColor,
+    ) {
+        for pos in rook_positions {
+            let piece = board.piece_at(&pos).unwrap();
+            assert_eq!(piece.color(), color);
+            assert_eq!(piece.piece_type(), piece_type);
+        }
     }
 }
