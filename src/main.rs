@@ -13,8 +13,6 @@ use bevy::sprite::{MaterialMesh2dBundle, Mesh2dHandle};
 use board_ui_factory::BoardUiFactory;
 
 //TODO:
-// * Finish Bishop
-// * Finish Queen
 // * Play Order
 // * Moving pieces via Selectable Pieces
 // * Moving pieces via Drag-drop

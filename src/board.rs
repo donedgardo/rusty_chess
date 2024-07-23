@@ -130,6 +130,9 @@ impl CheckerBoard {
     pub fn move_piece(&mut self, from: &BoardPosition, to: &BoardPosition) {
         let piece = self.pieces.remove(from);
         if let Some(p) = piece {
+            if self.active_turn() != p.color() {
+                return;
+            }
             self.moves.push(BoardMove::new(
                 p.piece_type().clone(),
                 from.clone(),
@@ -227,6 +230,11 @@ impl CheckerBoard {
             .any(|color| self.get_moves_for_color(color).is_empty())
     }
 
+    pub fn active_turn(&self) -> &PieceColor {
+        let turns = [&PieceColor::White, &PieceColor::Black];
+        turns[self.moves.len() % turns.len()]
+    }
+
     fn get_moves_for_color(&self, color: &PieceColor) -> Vec<BoardPosition> {
         let possible_moves = self
             .pieces
@@ -285,14 +293,14 @@ mod chess_board_tests {
     fn it_can_move_pieces() {
         let mut board = CheckerBoard::new();
         let position = BoardPosition::new(0, 0);
-        board.spawn(&position, PieceType::Pawn, PieceColor::Black);
+        board.spawn(&position, PieceType::Pawn, PieceColor::White);
         let new_position = BoardPosition::new(1, 1);
         board.move_piece(&position, &new_position);
         let piece_at_old_pos = board.piece_at(&position);
         assert!(piece_at_old_pos.is_none());
         let piece_at_new_pos = board.piece_at(&new_position).unwrap();
         assert_eq!(piece_at_new_pos.piece_type(), &PieceType::Pawn);
-        assert_eq!(piece_at_new_pos.color(), &PieceColor::Black);
+        assert_eq!(piece_at_new_pos.color(), &PieceColor::White);
     }
 
     #[test]
@@ -474,11 +482,12 @@ mod chess_board_tests {
     fn king_attacked_with_no_way_out_is_checkmated() {
         let pieces = vec![
             BoardPiece::build(PieceType::Pawn, PieceColor::White, "a7"),
-            BoardPiece::build(PieceType::Pawn, PieceColor::White, "b7"),
+            BoardPiece::build(PieceType::Pawn, PieceColor::White, "b6"),
             BoardPiece::build(PieceType::King, PieceColor::White, "a6"),
             BoardPiece::build(PieceType::King, PieceColor::Black, "a8"),
         ];
-        let board = CheckerBoard::with_pieces(pieces);
+        let mut board = CheckerBoard::with_pieces(pieces);
+        board.move_piece(&board_pos!("b6"), &board_pos!("b7"));
         assert!(board.is_mated(&PieceColor::Black));
     }
 
@@ -622,6 +631,34 @@ mod chess_board_tests {
         let piece = board.piece_at(&board_pos!("d8")).unwrap();
         assert_eq!(piece.color(), &PieceColor::Black);
         assert_eq!(piece.piece_type(), &PieceType::Queen);
+    }
+
+    #[test]
+    fn first_turn_is_whites() {
+        let board = CheckerBoard::default();
+        assert_eq!(board.active_turn(), &PieceColor::White)
+    }
+
+    #[test]
+    fn black_goes_second() {
+        let mut board = CheckerBoard::default();
+        board.move_piece(&board_pos!("e2"), &board_pos!("e4"));
+        assert_eq!(board.active_turn(), &PieceColor::Black)
+    }
+
+    #[test]
+    fn white_goes_third() {
+        let mut board = CheckerBoard::default();
+        board.move_piece(&board_pos!("e2"), &board_pos!("e4"));
+        board.move_piece(&board_pos!("e7"), &board_pos!("e5"));
+        assert_eq!(board.active_turn(), &PieceColor::White)
+    }
+
+    #[test]
+    fn first_cant_move_black_pieces() {
+        let mut board = CheckerBoard::default();
+        board.move_piece(&board_pos!("e7"), &board_pos!("e5"));
+        assert!(board.piece_at(&board_pos!("e5")).is_none())
     }
 
     fn assert_all_pos_have_pieces(

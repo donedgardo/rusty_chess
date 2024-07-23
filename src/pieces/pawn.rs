@@ -452,10 +452,11 @@ mod white_pawn_tests {
 
     #[test]
     fn can_en_passant_if_black_pass_from_seventh_row() {
-        let c5 = BoardPiece::build(PieceType::Pawn, PieceColor::White, "c5");
+        let c5 = BoardPiece::build(PieceType::Pawn, PieceColor::White, "c4");
         let b6 = BoardPiece::build(PieceType::Pawn, PieceColor::Black, "b7");
         let pieces = vec![b6, c5];
         let mut board = CheckerBoard::with_pieces(pieces);
+        board.move_piece(&board_pos!["c4"], &board_pos!["c5"]);
         board.move_piece(&board_pos!["b7"], &board_pos!["b5"]);
         let moves = board.get_possible_moves(&board_pos!("c5"));
         assert!(moves.contains(&board_pos!("b6")));
