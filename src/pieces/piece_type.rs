@@ -5,4 +5,5 @@ pub enum PieceType {
     King,
     Rook,
     Bishop,
+    Queen,
 }

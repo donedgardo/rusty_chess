@@ -85,6 +85,16 @@ impl CheckerBoard {
             PieceType::King,
             PieceColor::Black,
         );
+        board.spawn(
+            &BoardPosition::new(3, 0),
+            PieceType::Queen,
+            PieceColor::White,
+        );
+        board.spawn(
+            &BoardPosition::new(3, 7),
+            PieceType::Queen,
+            PieceColor::Black,
+        );
         board
     }
 
@@ -597,6 +607,21 @@ mod chess_board_tests {
         let piece = board.piece_at(&board_pos!("e8")).unwrap();
         assert_eq!(piece.color(), &PieceColor::Black);
         assert_eq!(piece.piece_type(), &PieceType::King);
+    }
+
+    #[test]
+    fn default_board_has_white_queen() {
+        let board = CheckerBoard::default();
+        let piece = board.piece_at(&board_pos!("d1")).unwrap();
+        assert_eq!(piece.color(), &PieceColor::White);
+        assert_eq!(piece.piece_type(), &PieceType::Queen);
+    }
+    #[test]
+    fn default_board_has_black_queen() {
+        let board = CheckerBoard::default();
+        let piece = board.piece_at(&board_pos!("d8")).unwrap();
+        assert_eq!(piece.color(), &PieceColor::Black);
+        assert_eq!(piece.piece_type(), &PieceType::Queen);
     }
 
     fn assert_all_pos_have_pieces(

@@ -4,6 +4,7 @@ use crate::pieces::king::King;
 use crate::pieces::knight::Knight;
 use crate::pieces::pawn::Pawn;
 use crate::pieces::piece_type::PieceType;
+use crate::pieces::queen::Queen;
 use crate::pieces::rook::Rook;
 use crate::pieces::Piece;
 
@@ -17,6 +18,7 @@ impl PieceFactory {
             PieceType::King => Box::new(King::new(color)),
             PieceType::Rook => Box::new(Rook::new(color)),
             PieceType::Bishop => Box::new(Bishop::new(color)),
+            PieceType::Queen => Box::new(Queen::new(color)),
         };
     }
 }
@@ -60,5 +62,12 @@ mod piece_factory_tests {
         let pawn = PieceFactory::build(PieceType::Bishop, PieceColor::White);
         assert_eq!(pawn.piece_type(), &PieceType::Bishop);
         assert_eq!(pawn.color(), &PieceColor::White);
+    }
+
+    #[test]
+    fn can_build_queen_from_type() {
+        let queen = PieceFactory::build(PieceType::Queen, PieceColor::Black);
+        assert_eq!(queen.piece_type(), &PieceType::Queen);
+        assert_eq!(queen.color(), &PieceColor::Black);
     }
 }
