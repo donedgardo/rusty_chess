@@ -7,6 +7,7 @@ mod bishop;
 pub mod color;
 mod diagonal_mover;
 pub mod factory;
+mod horizontal_vertical_mover;
 pub mod king;
 pub mod knight;
 pub mod pawn;
