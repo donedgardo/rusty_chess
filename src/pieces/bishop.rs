@@ -4,90 +4,15 @@ use crate::pieces::color::PieceColor;
 use crate::pieces::piece_type::PieceType;
 use crate::pieces::Piece;
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Bishop {
-    color: PieceColor,
-}
+struct DiagonalMover;
 
-impl Bishop {
-    pub fn new(color: PieceColor) -> Self {
-        Self { color }
-    }
-
-    fn add_up_left_diagonal_moves(
-        &self,
-        board: &CheckerBoard,
-        pos: &BoardPosition,
-        moves: &mut Vec<BoardPosition>,
-    ) {
-        let mut x = pos.x();
-        let mut y = pos.y();
-        while x > 0 && y < board.length() - 1 {
-            x = x - 1;
-            y = y + 1;
-            if self.it_should_stop_moving(board, moves, x, y) {
-                break;
-            }
-        }
-    }
-
-    fn add_up_right_diagonal_moves(
-        &self,
-        board: &CheckerBoard,
-        pos: &BoardPosition,
-        moves: &mut Vec<BoardPosition>,
-    ) {
-        let mut x = pos.x();
-        let mut y = pos.y();
-        while x < board.width() - 1 && y < board.length() - 1 {
-            x = x + 1;
-            y = y + 1;
-            if self.it_should_stop_moving(board, moves, x, y) {
-                break;
-            }
-        }
-    }
-
-    fn add_down_left_diagonal_moves(
-        &self,
-        board: &CheckerBoard,
-        pos: &BoardPosition,
-        moves: &mut Vec<BoardPosition>,
-    ) {
-        let mut x = pos.x();
-        let mut y = pos.y();
-        while x > 0 && y > 0 {
-            x = x - 1;
-            y = y - 1;
-            if self.it_should_stop_moving(board, moves, x, y) {
-                break;
-            }
-        }
-    }
-
-    fn add_down_right_diagonal_moves(
-        &self,
-        board: &CheckerBoard,
-        pos: &BoardPosition,
-        moves: &mut Vec<BoardPosition>,
-    ) {
-        let mut x = pos.x();
-        let mut y = pos.y();
-        while x < board.width() - 1 && y > 0 {
-            x = x + 1;
-            y = y - 1;
-            if self.it_should_stop_moving(board, moves, x, y) {
-                break;
-            }
-        }
-    }
-
-    fn it_should_stop_moving(
-        &self,
+impl DiagonalMover {
+    pub fn it_should_stop_moving(
         board: &CheckerBoard,
         moves: &mut Vec<BoardPosition>,
         x: u8,
         y: u8,
+        color: &PieceColor,
     ) -> bool {
         let pos = BoardPosition::new(x, y);
         let board_piece = board.piece_at(&pos);
@@ -97,12 +22,102 @@ impl Bishop {
                 false
             }
             Some(piece) => {
-                if self.is_opponent(piece.color()) {
+                if color != piece.color() {
                     moves.push(pos);
                 }
                 true
             }
         };
+    }
+
+    pub fn add_up_left_diagonal_moves(
+        board: &CheckerBoard,
+        pos: &BoardPosition,
+        moves: &mut Vec<BoardPosition>,
+        color: &PieceColor,
+    ) {
+        let mut x = pos.x();
+        let mut y = pos.y();
+        while x > 0 && y < board.length() - 1 {
+            x = x - 1;
+            y = y + 1;
+            if Self::it_should_stop_moving(board, moves, x, y, color) {
+                break;
+            }
+        }
+    }
+    pub fn add_up_right_diagonal_moves(
+        board: &CheckerBoard,
+        pos: &BoardPosition,
+        moves: &mut Vec<BoardPosition>,
+        color: &PieceColor,
+    ) {
+        let mut x = pos.x();
+        let mut y = pos.y();
+        while x < board.width() - 1 && y < board.length() - 1 {
+            x = x + 1;
+            y = y + 1;
+            if Self::it_should_stop_moving(board, moves, x, y, color) {
+                break;
+            }
+        }
+    }
+    pub fn add_down_left_diagonal_moves(
+        board: &CheckerBoard,
+        pos: &BoardPosition,
+        moves: &mut Vec<BoardPosition>,
+        color: &PieceColor,
+    ) {
+        let mut x = pos.x();
+        let mut y = pos.y();
+        while x > 0 && y > 0 {
+            x = x - 1;
+            y = y - 1;
+            if Self::it_should_stop_moving(board, moves, x, y, color) {
+                break;
+            }
+        }
+    }
+
+    pub fn add_down_right_diagonal_moves(
+        board: &CheckerBoard,
+        pos: &BoardPosition,
+        moves: &mut Vec<BoardPosition>,
+        color: &PieceColor,
+    ) {
+        let mut x = pos.x();
+        let mut y = pos.y();
+        while x < board.width() - 1 && y > 0 {
+            x = x + 1;
+            y = y - 1;
+            if Self::it_should_stop_moving(board, moves, x, y, color) {
+                break;
+            }
+        }
+    }
+
+    pub fn get_diagonal_moves(
+        board: &CheckerBoard,
+        from: &BoardPosition,
+        color: &PieceColor,
+    ) -> Vec<BoardPosition> {
+        let mut moves = Vec::with_capacity(13);
+        DiagonalMover::add_up_left_diagonal_moves(board, from, &mut moves, color);
+        DiagonalMover::add_up_right_diagonal_moves(board, from, &mut moves, color);
+        DiagonalMover::add_down_left_diagonal_moves(board, from, &mut moves, color);
+        DiagonalMover::add_down_right_diagonal_moves(board, from, &mut moves, color);
+        moves
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Bishop {
+    color: PieceColor,
+}
+
+impl Bishop {
+    pub fn new(color: PieceColor) -> Self {
+        Self { color }
     }
 }
 
@@ -116,12 +131,7 @@ impl Piece for Bishop {
     }
 
     fn get_all_moves(&self, board: &CheckerBoard, from: &BoardPosition) -> Vec<BoardPosition> {
-        let mut moves = Vec::with_capacity(13);
-        self.add_up_left_diagonal_moves(board, from, &mut moves);
-        self.add_up_right_diagonal_moves(board, from, &mut moves);
-        self.add_down_left_diagonal_moves(board, from, &mut moves);
-        self.add_down_right_diagonal_moves(board, from, &mut moves);
-        moves
+        DiagonalMover::get_diagonal_moves(board, from, self.color())
     }
 
     fn is_opponent(&self, color: &PieceColor) -> bool {
