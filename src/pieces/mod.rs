@@ -5,6 +5,7 @@ use piece_type::PieceType;
 
 mod bishop;
 pub mod color;
+mod diagonal_mover;
 pub mod factory;
 pub mod king;
 pub mod knight;
