@@ -18,5 +18,4 @@ mod chess_game_tests {
         let game = ChessGame::new();
         assert_eq!(game.is_over(), false);
     }
-
 }

@@ -1,8 +1,9 @@
 use crate::board::CheckerBoard;
 use crate::board_position::BoardPosition;
+use crate::board_position_marker::BoardPositionMarker;
 use crate::pieces::color::PieceColor;
 use crate::pieces::piece_type::PieceType;
-use bevy::prelude::{Entity, Rectangle, Resource, Transform};
+use bevy::prelude::{BuildChildren, Commands, Entity, Resource, Transform};
 use bevy::utils::HashMap;
 
 #[derive(Resource)]
@@ -30,10 +31,6 @@ impl BoardUiFactory {
         )
     }
 
-    pub fn get_shape(&self) -> Rectangle {
-        Rectangle::new(self.pos_width, self.pos_height)
-    }
-
     pub fn get_pos_iter(&self) -> impl Iterator<Item = BoardPosition> {
         let mut board_positions =
             Vec::with_capacity((self.board.width() * self.board.length()) as usize);
@@ -51,6 +48,24 @@ impl BoardUiFactory {
 
     pub fn get_pos_entity(&self, pos: &BoardPosition) -> Option<&Entity> {
         self.pos_entities.get(pos)
+    }
+
+    pub fn add_markers_to_possible_board_moves(
+        &self,
+        pos: &BoardPosition,
+        commands: &mut Commands,
+    ) {
+        let possible_moves = self.board.get_possible_moves(pos);
+        for board_position in possible_moves {
+            match self.pos_entities.get(&board_position) {
+                None => return,
+                Some(entity) => {
+                    commands.entity(*entity).with_children(|parent| {
+                        parent.spawn(BoardPositionMarker(board_position));
+                    });
+                }
+            }
+        }
     }
 
     pub fn get_sprite_index(&self, pos: &BoardPosition) -> Option<usize> {
@@ -84,8 +99,9 @@ impl BoardUiFactory {
 mod board_positions_test {
     use crate::board::CheckerBoard;
     use crate::board_pos;
+    use crate::board_position_marker::BoardPositionMarker;
     use crate::board_ui_factory::BoardUiFactory;
-    use bevy::prelude::{App, Rectangle, Transform};
+    use bevy::prelude::{App, Transform};
     use std::str::FromStr;
 
     #[test]
@@ -107,14 +123,6 @@ mod board_positions_test {
     }
 
     #[test]
-    fn it_returns_shape_for_board_pos() {
-        let board = CheckerBoard::new();
-        let board_ui_factory = create_board_ui_factory(68.5, 72., board);
-        let board_pos_shape = board_ui_factory.get_shape();
-        assert_eq!(board_pos_shape, Rectangle::new(68.5, 72.));
-    }
-
-    #[test]
     fn it_creates_all_board_positions() {
         let board = CheckerBoard::new();
         let board_ui_factory = create_board_ui_factory(68.5, 72., board);
@@ -133,6 +141,30 @@ mod board_positions_test {
         let mut board_ui_factory = create_board_ui_factory(68.5, 72., board);
         board_ui_factory.add_board_pos_entity(&pos, entity);
         assert_eq!(board_ui_factory.get_pos_entity(&pos), Some(&entity));
+    }
+
+    #[test]
+    fn it_adds_board_position_marker_component_to_possible_move_positions() {
+        let board = CheckerBoard::default();
+        let mut app = App::new();
+        let mut board_ui_factory = create_board_ui_factory(68.5, 72., board);
+
+        for pos in ["a2", "a3", "a4"] {
+            let entity = app.world_mut().spawn(Transform::default()).id();
+            let pos = board_pos!(pos);
+            board_ui_factory.add_board_pos_entity(&pos, entity);
+        }
+
+        let mut commands = app.world_mut().commands();
+        board_ui_factory.add_markers_to_possible_board_moves(&board_pos!("a2"), &mut commands);
+        app.update();
+
+        let board_marker_count = app
+            .world_mut()
+            .query::<&BoardPositionMarker>()
+            .iter(app.world())
+            .len();
+        assert_eq!(board_marker_count, 2);
     }
 
     #[test]
