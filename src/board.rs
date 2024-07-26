@@ -142,16 +142,16 @@ impl CheckerBoard {
         }
     }
 
-    pub fn get_possible_moves(&self, position: &BoardPosition) -> Vec<BoardPosition> {
-        let piece = self.pieces.get(position);
+    pub fn get_possible_moves(&self, from: &BoardPosition) -> Vec<BoardPosition> {
+        let piece = self.pieces.get(from);
         match piece {
             None => vec![],
             Some(piece) => piece
-                .get_all_moves(&self, position)
+                .get_all_moves(&self, from)
                 .into_iter()
                 .filter(|pos| {
                     let mut prediction_board = self.clone();
-                    prediction_board.move_piece(position, &pos);
+                    prediction_board.move_piece(from, &pos);
                     !prediction_board.is_checked(piece.color())
                 })
                 .collect(),
@@ -233,6 +233,16 @@ impl CheckerBoard {
     pub fn active_turn(&self) -> &PieceColor {
         let turns = [&PieceColor::White, &PieceColor::Black];
         turns[self.moves.len() % turns.len()]
+    }
+
+    pub fn is_valid_move(&self, from: &BoardPosition, to:&BoardPosition) -> bool {
+        if let Some(piece) =  self.pieces.get(from) {
+            if piece.color() != self.active_turn() {
+                return false;
+            }
+        }
+        let moves = self.get_possible_moves(from);
+        return moves.contains(to);
     }
 
     fn get_moves_for_color(&self, color: &PieceColor) -> Vec<BoardPosition> {
@@ -659,6 +669,18 @@ mod chess_board_tests {
         let mut board = CheckerBoard::default();
         board.move_piece(&board_pos!("e7"), &board_pos!("e5"));
         assert!(board.piece_at(&board_pos!("e5")).is_none())
+    }
+
+    #[test]
+    fn incorrect_move_is_invalid() {
+        let  board = CheckerBoard::default();
+        assert!(!board.is_valid_move(&board_pos!("e2"), &board_pos!("e7")));
+    }
+    #[test]
+
+    fn out_of_order_move_is_invalid() {
+        let  board = CheckerBoard::default();
+        assert!(!board.is_valid_move(&board_pos!("e7"), &board_pos!("e6")));
     }
 
     fn assert_all_pos_have_pieces(

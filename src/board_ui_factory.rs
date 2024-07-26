@@ -10,7 +10,7 @@ use bevy::utils::HashMap;
 pub struct BoardUiFactory {
     pos_width: f32,
     pos_height: f32,
-    board: CheckerBoard,
+    pub board: CheckerBoard,
     pos_entities: HashMap<BoardPosition, Entity>,
 }
 

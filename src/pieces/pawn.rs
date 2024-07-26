@@ -187,6 +187,7 @@ impl Pawn {
 
     fn can_en_passant(from: &BoardPosition, last_move: &BoardMove) -> bool {
         last_move.piece_type() == &PieceType::Pawn
+            && from.y() == last_move.to().y()
             && from.x().abs_diff(last_move.to().x()) == 1
             && last_move.from().y().abs_diff(last_move.to().y()) == 2
     }
@@ -440,6 +441,18 @@ mod white_pawn_tests {
     }
 
     #[test]
+    fn cant_en_passant_if_white_is_not_in_6th_row() {
+        let b6 = BoardPiece::build(PieceType::Pawn, PieceColor::Black, "b7");
+        let c5 = BoardPiece::build(PieceType::Pawn, PieceColor::White, "c2");
+        let pieces = vec![b6, c5];
+        let mut board = CheckerBoard::with_pieces(pieces);
+        board.move_piece(&board_pos!["c2"], &board_pos!["c4"]);
+        board.move_piece(&board_pos!["b7"], &board_pos!["b5"]);
+        let moves = board.get_possible_moves(&board_pos!("c4"));
+        assert!(!moves.contains(&board_pos!("b6")));
+    }
+
+    #[test]
     fn cant_en_passant_if_black_didnt_pass_from_seventh_row() {
         let b6 = BoardPiece::build(PieceType::Pawn, PieceColor::Black, "b6");
         let c5 = BoardPiece::build(PieceType::Pawn, PieceColor::White, "c5");
@@ -461,6 +474,7 @@ mod white_pawn_tests {
         let moves = board.get_possible_moves(&board_pos!("c5"));
         assert!(moves.contains(&board_pos!("b6")));
     }
+
 
     #[test]
     fn cant_move_into_a_check() {
@@ -673,6 +687,17 @@ mod black_pawn_tests {
         let last_move = BoardMove::new(PieceType::Knight, board_pos!("c2"), board_pos!("c4"));
         let possible_takes = d4.get_possible_en_passant_take(&board_pos!("d4"), Some(&last_move));
         assert!(possible_takes.is_none());
+    }
+
+    #[test]
+    fn cant_en_passant_if_is_not_in_4th_row() {
+        let c2 = BoardPiece::build(PieceType::Pawn, PieceColor::White, "c2");
+        let b5 = BoardPiece::build(PieceType::Pawn, PieceColor::Black, "b5");
+        let pieces = vec![c2, b5];
+        let mut board = CheckerBoard::with_pieces(pieces);
+        board.move_piece(&board_pos!["c2"], &board_pos!["c4"]);
+        let moves = board.get_possible_moves(&board_pos!("b5"));
+        assert!(!moves.contains(&board_pos!("c3")));
     }
 
     #[test]

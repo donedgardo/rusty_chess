@@ -11,6 +11,7 @@ use crate::board::CheckerBoard;
 use crate::board_position::BoardPosition;
 use crate::board_position_marker::{add_board_pos_markers_sprite, BoardPositionMarker};
 use bevy::asset::AssetMetaCheck;
+use bevy::ecs::bundle::DynamicBundle;
 use bevy::prelude::*;
 use bevy_mod_picking::debug::DebugPickingMode;
 use bevy_mod_picking::prelude::{Drag, DragEnd, DragStart, Drop, Listener, On, Pickable, Pointer};
@@ -18,14 +19,17 @@ use bevy_mod_picking::{low_latency_window_plugin, DefaultPickingPlugins, Pickabl
 use board_ui_factory::BoardUiFactory;
 
 //TODO:
-// * Moving pieces via Drag-drop
-// * Moving pieces via Selectable Pieces
+// * - Bug enpessant is not mutating board (need a way to tell ui what has been changed)
+// * Game Loop (Restart after game over)
+// * Pormoting pawn
+// * Castle Moves
 // * Season cycles
 // * Seasonal Pieces
 // * AI easy
-// * Local Multiplayer
-// * Remote Multiplayer (Steam remote-local)
+// * Sounds
+// * Title Screen
 // * AI - Hard Monte carlo tree search
+// * - Bug Dropping outside board should return piece.
 
 fn main() {
     let board = CheckerBoard::default();
@@ -87,11 +91,33 @@ fn setup(
                 On::<Pointer<Drop>>::run(
                     |event: Listener<Pointer<Drop>>,
                      mut commands: Commands,
+                     mut board_ui_factory: ResMut<BoardUiFactory>,
+                     from_query: Query<&BoardPieceComponent>,
+                     to_query: Query<&BoardPosComponent>,
                      marker_query: Query<Entity, With<BoardPositionMarker>>| {
-                        println!(
-                            "Dropped piece {:?}, on empty Target: {:?}",
-                            event.dropped, event.target
-                        );
+                        let mut from: Option<BoardPosition> = None;
+                        let mut to: Option<BoardPosition> = None;
+                        for pos in from_query.get(event.dropped).into_iter() {
+                            from = Some(pos.0.clone())
+                        }
+                        for pos in to_query.get(event.target).into_iter() {
+                            to = Some(pos.0.clone())
+                        }
+                        if let (Some(from), Some(to)) = (from, to) {
+                          println!(
+                            "From {:?}, To: {:?}",
+                            from, to
+                          );
+                          if !board_ui_factory.board.is_valid_move(&from, &to) {
+                            let transform = board_ui_factory.get_pos_transform(&from);
+                            commands.entity(event.dropped).insert(transform);
+                          } else {
+                            board_ui_factory.board.move_piece(&from, &to);
+                            let transform = board_ui_factory.get_pos_transform(&to);
+                            commands.entity(event.dropped).insert(transform);
+                            commands.entity(event.dropped).insert(BoardPieceComponent(to));
+                          }
+                        }
                         for marker in marker_query.iter() {
                             commands.entity(marker).despawn();
                         }
@@ -137,6 +163,41 @@ fn setup(
                     transform.translation.y -= drag.delta.y;
                 }),
                 On::<Pointer<DragEnd>>::target_insert(Pickable::default()),
+                On::<Pointer<Drop>>::run(
+                  |event: Listener<Pointer<Drop>>,
+                   mut commands: Commands,
+                   mut board_ui_factory: ResMut<BoardUiFactory>,
+                   query: Query<&BoardPieceComponent>,
+                   marker_query: Query<Entity, With<BoardPositionMarker>>| {
+                    let mut from: Option<BoardPosition> = None;
+                    let mut to: Option<BoardPosition> = None;
+                    for pos in query.get(event.dropped).into_iter() {
+                      from = Some(pos.0.clone())
+                    }
+                    for pos in query.get(event.target).into_iter() {
+                      to = Some(pos.0.clone())
+                    }
+                    if let (Some(from), Some(to)) = (from, to) {
+                      println!(
+                        "From {:?}, To: {:?}",
+                        from, to
+                      );
+                      if !board_ui_factory.board.is_valid_move(&from, &to) {
+                        let transform = board_ui_factory.get_pos_transform(&from);
+                        commands.entity(event.dropped).insert(transform);
+                      } else {
+                        board_ui_factory.board.move_piece(&from, &to);
+                        let transform = board_ui_factory.get_pos_transform(&to);
+                        commands.entity(event.dropped).insert(transform);
+                        commands.entity(event.target).despawn();
+                        commands.entity(event.dropped).insert(BoardPieceComponent(to));
+                      }
+                    }
+                    for marker in marker_query.iter() {
+                      commands.entity(marker).despawn();
+                    }
+                  },
+                ),
             ));
         }
     }
