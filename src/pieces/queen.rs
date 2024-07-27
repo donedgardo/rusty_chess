@@ -40,6 +40,10 @@ impl Piece for Queen {
     fn is_opponent(&self, color: &PieceColor) -> bool {
         self.color() != color
     }
+
+    fn takes(&self, board: &CheckerBoard, from: &BoardPosition, to: &BoardPosition) -> Vec<BoardPosition> {
+        todo!()
+    }
 }
 
 #[cfg(test)]

@@ -127,19 +127,30 @@ impl CheckerBoard {
     pub fn piece_at(&self, position: &BoardPosition) -> Option<&Box<dyn Piece>> {
         self.pieces.get(position)
     }
-    pub fn move_piece(&mut self, from: &BoardPosition, to: &BoardPosition) {
+    fn force_move_piece(&mut self, from: &BoardPosition, to: &BoardPosition) {
+        let piece = self.pieces.remove(from);
+        if let Some(from_piece) = piece {
+            self.pieces.insert(to.clone(), from_piece);
+        }
+    }
+
+    pub fn move_piece(&mut self, from: &BoardPosition, to: &BoardPosition) -> Vec<BoardPosition> {
+        let mut updated_positions = Vec::with_capacity(3);
+        if !self.is_valid_move(from, to) {
+            return updated_positions;
+        }
         let piece = self.pieces.remove(from);
         if let Some(p) = piece {
-            if self.active_turn() != p.color() {
-                return;
-            }
             self.moves.push(BoardMove::new(
                 p.piece_type().clone(),
                 from.clone(),
                 to.clone(),
             ));
             self.pieces.insert(to.clone(), p);
+            updated_positions.push(from.clone());
+            updated_positions.push(to.clone());
         }
+        updated_positions
     }
 
     pub fn get_possible_moves(&self, from: &BoardPosition) -> Vec<BoardPosition> {
@@ -151,7 +162,7 @@ impl CheckerBoard {
                 .into_iter()
                 .filter(|pos| {
                     let mut prediction_board = self.clone();
-                    prediction_board.move_piece(from, &pos);
+                    prediction_board.force_move_piece(from, &pos);
                     !prediction_board.is_checked(piece.color())
                 })
                 .collect(),
@@ -235,8 +246,8 @@ impl CheckerBoard {
         turns[self.moves.len() % turns.len()]
     }
 
-    pub fn is_valid_move(&self, from: &BoardPosition, to:&BoardPosition) -> bool {
-        if let Some(piece) =  self.pieces.get(from) {
+    pub fn is_valid_move(&self, from: &BoardPosition, to: &BoardPosition) -> bool {
+        if let Some(piece) = self.pieces.get(from) {
             if piece.color() != self.active_turn() {
                 return false;
             }
@@ -300,12 +311,12 @@ mod chess_board_tests {
     }
 
     #[test]
-    fn it_can_move_pieces() {
+    fn it_can_force_move_pieces() {
         let mut board = CheckerBoard::new();
         let position = BoardPosition::new(0, 0);
         board.spawn(&position, PieceType::Pawn, PieceColor::White);
         let new_position = BoardPosition::new(1, 1);
-        board.move_piece(&position, &new_position);
+        board.force_move_piece(&position, &new_position);
         let piece_at_old_pos = board.piece_at(&position);
         assert!(piece_at_old_pos.is_none());
         let piece_at_new_pos = board.piece_at(&new_position).unwrap();
@@ -343,6 +354,7 @@ mod chess_board_tests {
         assert_eq!(last_move.from(), &board_pos!["b2"]);
         assert_eq!(last_move.to(), &board_pos!["b3"]);
     }
+
     #[test]
     fn non_eight_row_is_not_last_row_for_white() {
         let board = CheckerBoard::new();
@@ -673,14 +685,42 @@ mod chess_board_tests {
 
     #[test]
     fn incorrect_move_is_invalid() {
-        let  board = CheckerBoard::default();
+        let board = CheckerBoard::default();
         assert!(!board.is_valid_move(&board_pos!("e2"), &board_pos!("e7")));
     }
-    #[test]
 
+    #[test]
     fn out_of_order_move_is_invalid() {
-        let  board = CheckerBoard::default();
+        let board = CheckerBoard::default();
         assert!(!board.is_valid_move(&board_pos!("e7"), &board_pos!("e6")));
+    }
+
+    #[test]
+    fn can_not_move_if_move_is_invalid() {
+        let mut board = CheckerBoard::default();
+        board.move_piece(&board_pos!("e7"), &board_pos!("e6"));
+        assert!(board.piece_at(&board_pos!("e6")).is_none());
+        board.move_piece(&board_pos!("e2"), &board_pos!("c4"));
+        assert!(board.piece_at(&board_pos!("c4")).is_none());
+    }
+
+    #[test]
+    fn move_piece_returns_empty_list_when_invalid_pos() {
+        let mut board = CheckerBoard::default();
+        let updated_pos = board.move_piece(&board_pos!("e7"), &board_pos!("e6"));
+        assert!(updated_pos.is_empty());
+        assert!(board.piece_at(&board_pos!("e6")).is_none());
+        let updated_pos = board.move_piece(&board_pos!("e2"), &board_pos!("c4"));
+        assert!(updated_pos.is_empty());
+        assert!(board.piece_at(&board_pos!("c4")).is_none());
+    }
+
+    #[test]
+    fn move_piece_returns_list_of_updated_positions() {
+        let mut board = CheckerBoard::default();
+        let updated_pos = board.move_piece(&board_pos!("a2"), &board_pos!("a3"));
+        assert!(updated_pos.contains(&board_pos!("a2")));
+        assert!(updated_pos.contains(&board_pos!("a3")));
     }
 
     fn assert_all_pos_have_pieces(

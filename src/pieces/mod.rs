@@ -20,6 +20,7 @@ pub trait Piece: CloneBox + Send + Sync {
     fn piece_type(&self) -> &PieceType;
     fn get_all_moves(&self, board: &CheckerBoard, from: &BoardPosition) -> Vec<BoardPosition>;
     fn is_opponent(&self, color: &PieceColor) -> bool;
+    fn takes(&self, board: &CheckerBoard, from: &BoardPosition, to: &BoardPosition) -> Vec<BoardPosition>;
 }
 
 pub trait CloneBox {
