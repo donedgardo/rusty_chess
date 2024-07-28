@@ -44,7 +44,11 @@ impl Piece for Knight {
     }
 
     fn takes(&self, board: &CheckerBoard, from: &BoardPosition, to: &BoardPosition) -> Vec<BoardPosition> {
-        todo!()
+        let moves = self.get_all_moves(board, from);
+        if moves.contains(to) && board.piece_at(to).is_some() {
+            return vec![to.clone()];
+        }
+        vec![]
     }
 }
 
@@ -203,5 +207,22 @@ mod knight_piece_tests {
         let board = CheckerBoard::with_pieces(pieces);
         let moves = board.get_possible_moves(&board_pos!("d4"));
         assert!(moves.is_empty());
+    }
+
+    #[test]
+    fn takes_is_empty_when_no_takes_in_move() {
+        let ke2 = BoardPiece::build(PieceType::Knight, PieceColor::White, "e2");
+        let mut board = CheckerBoard::with_pieces(vec![ke2]);
+        let side_effects = board.move_piece(&board_pos!("e2"), &board_pos!("c1"));
+        assert!(side_effects.takes.is_empty());
+    }
+
+    #[test]
+    fn takes_has_pos_taken() {
+        let ke2 = BoardPiece::build(PieceType::Knight, PieceColor::White, "e2");
+        let c1 = BoardPiece::build(PieceType::Pawn, PieceColor::Black, "c1");
+        let mut board = CheckerBoard::with_pieces(vec![ke2, c1]);
+        let side_effects = board.move_piece(&board_pos!("e2"), &board_pos!("c1"));
+        assert!(side_effects.takes.contains(&board_pos!("c1")));
     }
 }

@@ -50,7 +50,11 @@ impl Piece for King {
     }
 
     fn takes(&self, board: &CheckerBoard, from: &BoardPosition, to: &BoardPosition) -> Vec<BoardPosition> {
-        todo!()
+        let moves = self.get_all_moves(board, from);
+        if moves.contains(to) && board.piece_at(to).is_some() {
+            return vec![to.clone()];
+        }
+        vec![]
     }
 }
 
@@ -185,6 +189,23 @@ mod king_tests {
         let moves = board.get_possible_moves(&board_pos!("d4"));
         assert!(!moves.contains(&board_pos!("c4")));
         assert!(!moves.contains(&board_pos!("e4")));
+    }
+
+    #[test]
+    fn takes_is_empty_when_no_takes_in_move() {
+        let ke2 = BoardPiece::build(PieceType::King, PieceColor::White, "e2");
+        let mut board = CheckerBoard::with_pieces(vec![ke2]);
+        let side_effects = board.move_piece(&board_pos!("e2"), &board_pos!("d3"));
+        assert!(side_effects.takes.is_empty());
+    }
+
+    #[test]
+    fn takes_has_pos_taken() {
+        let ke2 = BoardPiece::build(PieceType::King, PieceColor::White, "e2");
+        let d3 = BoardPiece::build(PieceType::Pawn, PieceColor::Black, "d3");
+        let mut board = CheckerBoard::with_pieces(vec![ke2, d3]);
+        let side_effects = board.move_piece(&board_pos!("e2"), &board_pos!("d3"));
+        assert!(side_effects.takes.contains(&board_pos!("d3")));
     }
 
     fn put_king_in_empty_board(pos: &str) -> Vec<BoardPosition> {

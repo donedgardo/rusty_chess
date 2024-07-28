@@ -35,7 +35,11 @@ impl Piece for Rook {
     }
 
     fn takes(&self, board: &CheckerBoard, from: &BoardPosition, to: &BoardPosition) -> Vec<BoardPosition> {
-        todo!()
+        let moves = self.get_all_moves(board, from);
+        if moves.contains(to) && board.piece_at(to).is_some() {
+            return vec![to.clone()];
+        }
+        vec![]
     }
 }
 
@@ -257,6 +261,23 @@ mod rook_test {
         for pos in legal_vertical_moves {
             assert!(moves.contains(&board_pos!(pos)));
         }
+    }
+
+    #[test]
+    fn takes_is_empty_when_no_takes_in_move() {
+        let re2 = BoardPiece::build(PieceType::Rook, PieceColor::White, "e2");
+        let mut board = CheckerBoard::with_pieces(vec![re2]);
+        let side_effects = board.move_piece(&board_pos!("e2"), &board_pos!("e1"));
+        assert!(side_effects.takes.is_empty());
+    }
+
+    #[test]
+    fn takes_has_pos_taken() {
+        let re2 = BoardPiece::build(PieceType::Rook, PieceColor::White, "e2");
+        let e1 = BoardPiece::build(PieceType::Pawn, PieceColor::Black, "e1");
+        let mut board = CheckerBoard::with_pieces(vec![re2, e1]);
+        let side_effects = board.move_piece(&board_pos!("e2"), &board_pos!("e1"));
+        assert!(side_effects.takes.contains(&board_pos!("e1")));
     }
 
     fn spawn_rook_in_empty_board(pos: &str) -> Vec<BoardPosition> {

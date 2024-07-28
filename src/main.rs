@@ -11,7 +11,6 @@ use crate::board::CheckerBoard;
 use crate::board_position::BoardPosition;
 use crate::board_position_marker::{add_board_pos_markers_sprite, BoardPositionMarker};
 use bevy::asset::AssetMetaCheck;
-use bevy::ecs::bundle::DynamicBundle;
 use bevy::prelude::*;
 use bevy_mod_picking::prelude::{Drag, DragEnd, DragStart, Drop, Listener, On, Pickable, Pointer};
 use bevy_mod_picking::{low_latency_window_plugin, DefaultPickingPlugins, PickableBundle};

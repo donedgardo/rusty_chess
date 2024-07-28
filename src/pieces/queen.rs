@@ -42,7 +42,11 @@ impl Piece for Queen {
     }
 
     fn takes(&self, board: &CheckerBoard, from: &BoardPosition, to: &BoardPosition) -> Vec<BoardPosition> {
-        todo!()
+        let moves = self.get_all_moves(board, from);
+        if moves.contains(to) && board.piece_at(to).is_some() {
+            return vec![to.clone()];
+        }
+        vec![]
     }
 }
 
@@ -135,5 +139,22 @@ mod queen_tests {
         let board = CheckerBoard::with_pieces(pieces);
         let moves = board.get_possible_moves(&board_pos!("d4"));
         assert_eq!(moves, vec![board_pos!("d5")])
+    }
+
+    #[test]
+    fn takes_is_empty_when_no_takes_in_move() {
+        let qe2 = BoardPiece::build(PieceType::Queen, PieceColor::White, "e2");
+        let mut board = CheckerBoard::with_pieces(vec![qe2]);
+        let side_effects = board.move_piece(&board_pos!("e2"), &board_pos!("d3"));
+        assert!(side_effects.takes.is_empty());
+    }
+
+    #[test]
+    fn takes_has_pos_taken() {
+        let qe2 = BoardPiece::build(PieceType::Queen, PieceColor::White, "e2");
+        let d3 = BoardPiece::build(PieceType::Pawn, PieceColor::Black, "d3");
+        let mut board = CheckerBoard::with_pieces(vec![qe2, d3]);
+        let side_effects = board.move_piece(&board_pos!("e2"), &board_pos!("d3"));
+        assert!(side_effects.takes.contains(&board_pos!("d3")));
     }
 }

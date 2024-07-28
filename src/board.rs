@@ -7,6 +7,10 @@ use crate::pieces::piece_type::PieceType;
 use crate::pieces::Piece;
 use std::collections::HashMap;
 
+pub struct BoardSideEffects {
+    pub takes: Vec<BoardPosition>
+}
+
 #[derive(Clone)]
 pub struct CheckerBoard {
     moves: Vec<BoardMove>,
@@ -127,6 +131,7 @@ impl CheckerBoard {
     pub fn piece_at(&self, position: &BoardPosition) -> Option<&Box<dyn Piece>> {
         self.pieces.get(position)
     }
+
     fn force_move_piece(&mut self, from: &BoardPosition, to: &BoardPosition) {
         let piece = self.pieces.remove(from);
         if let Some(from_piece) = piece {
@@ -134,23 +139,28 @@ impl CheckerBoard {
         }
     }
 
-    pub fn move_piece(&mut self, from: &BoardPosition, to: &BoardPosition) -> Vec<BoardPosition> {
-        let mut updated_positions = Vec::with_capacity(3);
+    pub fn move_piece(&mut self, from: &BoardPosition, to: &BoardPosition) -> BoardSideEffects {
+        let mut board_side_effects = BoardSideEffects {
+            takes: vec![]
+        };
         if !self.is_valid_move(from, to) {
-            return updated_positions;
+            return board_side_effects;
         }
-        let piece = self.pieces.remove(from);
-        if let Some(p) = piece {
+        if let Some(p) = self.piece_at(from) {
+            board_side_effects.takes = p.takes(self, from, to);
+        }
+        if let Some(p) = self.pieces.remove(from) {
+            for takes in board_side_effects.takes.iter() {
+                self.pieces.remove(takes);
+            }
             self.moves.push(BoardMove::new(
                 p.piece_type().clone(),
                 from.clone(),
                 to.clone(),
             ));
             self.pieces.insert(to.clone(), p);
-            updated_positions.push(from.clone());
-            updated_positions.push(to.clone());
         }
-        updated_positions
+        board_side_effects
     }
 
     pub fn get_possible_moves(&self, from: &BoardPosition) -> Vec<BoardPosition> {
@@ -705,23 +715,12 @@ mod chess_board_tests {
     }
 
     #[test]
-    fn move_piece_returns_empty_list_when_invalid_pos() {
+    fn move_piece_returns_empty_list_of_takes_when_no_takes_happen() {
         let mut board = CheckerBoard::default();
-        let updated_pos = board.move_piece(&board_pos!("e7"), &board_pos!("e6"));
-        assert!(updated_pos.is_empty());
-        assert!(board.piece_at(&board_pos!("e6")).is_none());
-        let updated_pos = board.move_piece(&board_pos!("e2"), &board_pos!("c4"));
-        assert!(updated_pos.is_empty());
-        assert!(board.piece_at(&board_pos!("c4")).is_none());
+        let side_effects = board.move_piece(&board_pos!("e7"), &board_pos!("e6"));
+        assert!(side_effects.takes.is_empty());
     }
 
-    #[test]
-    fn move_piece_returns_list_of_updated_positions() {
-        let mut board = CheckerBoard::default();
-        let updated_pos = board.move_piece(&board_pos!("a2"), &board_pos!("a3"));
-        assert!(updated_pos.contains(&board_pos!("a2")));
-        assert!(updated_pos.contains(&board_pos!("a3")));
-    }
 
     fn assert_all_pos_have_pieces(
         board: CheckerBoard,
