@@ -217,7 +217,12 @@ impl Piece for Pawn {
         &self.color != color
     }
 
-    fn takes(&self, board: &CheckerBoard, from: &BoardPosition, to: &BoardPosition) -> Vec<BoardPosition> {
+    fn takes(
+        &self,
+        board: &CheckerBoard,
+        from: &BoardPosition,
+        to: &BoardPosition,
+    ) -> Vec<BoardPosition> {
         let mut takes = Vec::with_capacity(1);
         if board.piece_at(to).is_some() {
             takes.push(to.clone())
@@ -225,10 +230,8 @@ impl Piece for Pawn {
         if let Some(en_passant) = self.get_possible_en_passant_take(from, board.get_last_move()) {
             if &en_passant == to {
                 match self.color() {
-                    PieceColor::White =>
-                        takes.push(BoardPosition::new(to.x(), to.y() - 1)),
-                    PieceColor::Black =>
-                        takes.push(BoardPosition::new(to.x(), to.y() + 1))
+                    PieceColor::White => takes.push(BoardPosition::new(to.x(), to.y() - 1)),
+                    PieceColor::Black => takes.push(BoardPosition::new(to.x(), to.y() + 1)),
                 }
             }
         }

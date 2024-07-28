@@ -1,15 +1,12 @@
 use crate::board_move::BoardMove;
 use crate::board_piece::BoardPiece;
 use crate::board_position::BoardPosition;
+use crate::board_side_effects::BoardSideEffects;
 use crate::pieces::color::PieceColor;
 use crate::pieces::factory::PieceFactory;
 use crate::pieces::piece_type::PieceType;
 use crate::pieces::Piece;
 use std::collections::HashMap;
-
-pub struct BoardSideEffects {
-    pub takes: Vec<BoardPosition>
-}
 
 #[derive(Clone)]
 pub struct CheckerBoard {
@@ -140,9 +137,7 @@ impl CheckerBoard {
     }
 
     pub fn move_piece(&mut self, from: &BoardPosition, to: &BoardPosition) -> BoardSideEffects {
-        let mut board_side_effects = BoardSideEffects {
-            takes: vec![]
-        };
+        let mut board_side_effects = BoardSideEffects { takes: vec![] };
         if !self.is_valid_move(from, to) {
             return board_side_effects;
         }
@@ -720,7 +715,6 @@ mod chess_board_tests {
         let side_effects = board.move_piece(&board_pos!("e7"), &board_pos!("e6"));
         assert!(side_effects.takes.is_empty());
     }
-
 
     fn assert_all_pos_have_pieces(
         board: CheckerBoard,

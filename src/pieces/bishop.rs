@@ -34,11 +34,16 @@ impl Piece for Bishop {
         self.color() != color
     }
 
-    fn takes(&self, board: &CheckerBoard, from: &BoardPosition, to: &BoardPosition) -> Vec<BoardPosition> {
+    fn takes(
+        &self,
+        board: &CheckerBoard,
+        from: &BoardPosition,
+        to: &BoardPosition,
+    ) -> Vec<BoardPosition> {
         let moves = self.get_all_moves(board, from);
         if moves.contains(to) && board.piece_at(to).is_some() {
-           return vec![to.clone()];
-         }
+            return vec![to.clone()];
+        }
         vec![]
     }
 }

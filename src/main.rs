@@ -3,8 +3,8 @@ mod board_move;
 mod board_piece;
 mod board_position;
 mod board_position_marker;
+mod board_side_effects;
 mod board_ui_factory;
-mod game;
 mod pieces;
 
 use crate::board::CheckerBoard;
@@ -17,10 +17,9 @@ use bevy_mod_picking::{low_latency_window_plugin, DefaultPickingPlugins, Pickabl
 use board_ui_factory::BoardUiFactory;
 
 //TODO:
-// * - Bug enpessant is not mutating board (need a way to tell ui what has been changed)
 // * Game Loop (Restart after game over)
-// * Pormoting pawn
 // * Castle Moves
+// * Pormoting pawn
 // * Season cycles
 // * Seasonal Pieces
 // * AI easy
@@ -28,6 +27,7 @@ use board_ui_factory::BoardUiFactory;
 // * Title Screen
 // * AI - Hard Monte carlo tree search
 // * - Bug Dropping outside board should return piece.
+//   --- (Fix by only allowing board to move inside of board)
 
 fn main() {
     let board = CheckerBoard::default();
@@ -59,8 +59,24 @@ fn main() {
 #[derive(Component, Clone)]
 struct BoardPosComponent(BoardPosition);
 
+impl WithBoardPosition for BoardPosComponent {
+    fn pos(&self) -> &BoardPosition {
+        &self.0
+    }
+}
+
 #[derive(Component, Clone)]
 struct BoardPieceComponent(BoardPosition);
+
+impl WithBoardPosition for BoardPieceComponent {
+    fn pos(&self) -> &BoardPosition {
+        &self.0
+    }
+}
+
+pub trait WithBoardPosition {
+    fn pos(&self) -> &BoardPosition;
+}
 
 fn setup(
     mut commands: Commands,
@@ -90,35 +106,21 @@ fn setup(
                 On::<Pointer<Drop>>::run(
                     |event: Listener<Pointer<Drop>>,
                      mut commands: Commands,
-                     mut board_ui_factory: ResMut<BoardUiFactory>,
-                     from_query: Query<&BoardPieceComponent>,
-                     to_query: Query<&BoardPosComponent>,
+                     board_ui_factory: ResMut<BoardUiFactory>,
+                     board_piece_query: Query<(Entity, &BoardPieceComponent)>,
+                     board_pos_query: Query<(Entity, &BoardPosComponent)>,
                      marker_query: Query<Entity, With<BoardPositionMarker>>| {
-                        let mut from: Option<BoardPosition> = None;
-                        let mut to: Option<BoardPosition> = None;
-                        for pos in from_query.get(event.dropped).into_iter() {
-                            from = Some(pos.0.clone())
-                        }
-                        for pos in to_query.get(event.target).into_iter() {
-                            to = Some(pos.0.clone())
-                        }
-                        if let (Some(from), Some(to)) = (from, to) {
-                            println!("From {:?}, To: {:?}", from, to);
-                            if !board_ui_factory.board.is_valid_move(&from, &to) {
-                                let transform = board_ui_factory.get_pos_transform(&from);
-                                commands.entity(event.dropped).insert(transform);
-                            } else {
-                                board_ui_factory.board.move_piece(&from, &to);
-                                let transform = board_ui_factory.get_pos_transform(&to);
-                                commands.entity(event.dropped).insert(transform);
-                                commands
-                                    .entity(event.dropped)
-                                    .insert(BoardPieceComponent(to));
-                            }
-                        }
-                        for marker in marker_query.iter() {
-                            commands.entity(marker).despawn();
-                        }
+                        let from = get_pos(event.dropped, &board_piece_query);
+                        let to = get_pos(event.target, &board_pos_query);
+                        update_board(
+                            event.dropped,
+                            &mut commands,
+                            board_ui_factory,
+                            board_piece_query,
+                            from,
+                            to,
+                        );
+                        remove_all_markers(&mut commands, &marker_query);
                     },
                 ),
             ))
@@ -164,38 +166,106 @@ fn setup(
                 On::<Pointer<Drop>>::run(
                     |event: Listener<Pointer<Drop>>,
                      mut commands: Commands,
-                     mut board_ui_factory: ResMut<BoardUiFactory>,
-                     query: Query<&BoardPieceComponent>,
+                     board_ui_factory: ResMut<BoardUiFactory>,
+                     pieces_query: Query<(Entity, &BoardPieceComponent)>,
                      marker_query: Query<Entity, With<BoardPositionMarker>>| {
-                        let mut from: Option<BoardPosition> = None;
-                        let mut to: Option<BoardPosition> = None;
-                        for pos in query.get(event.dropped).into_iter() {
-                            from = Some(pos.0.clone())
-                        }
-                        for pos in query.get(event.target).into_iter() {
-                            to = Some(pos.0.clone())
-                        }
-                        if let (Some(from), Some(to)) = (from, to) {
-                            println!("From {:?}, To: {:?}", from, to);
-                            if !board_ui_factory.board.is_valid_move(&from, &to) {
-                                let transform = board_ui_factory.get_pos_transform(&from);
-                                commands.entity(event.dropped).insert(transform);
-                            } else {
-                                board_ui_factory.board.move_piece(&from, &to);
-                                let transform = board_ui_factory.get_pos_transform(&to);
-                                commands.entity(event.dropped).insert(transform);
-                                commands.entity(event.target).despawn();
-                                commands
-                                    .entity(event.dropped)
-                                    .insert(BoardPieceComponent(to));
-                            }
-                        }
-                        for marker in marker_query.iter() {
-                            commands.entity(marker).despawn();
-                        }
+                        let from = get_pos(event.dropped, &pieces_query);
+                        let to = get_pos(event.target, &pieces_query);
+                        update_board(
+                            event.dropped,
+                            &mut commands,
+                            board_ui_factory,
+                            pieces_query,
+                            from,
+                            to,
+                        );
+                        remove_all_markers(&mut commands, &marker_query);
                     },
                 ),
             ));
         }
     }
+}
+
+/// Move all these functions to ui builder
+fn update_board(
+    piece_entity: Entity,
+    mut commands: &mut Commands,
+    mut board_ui_factory: ResMut<BoardUiFactory>,
+    pieces_query: Query<(Entity, &BoardPieceComponent)>,
+    mut from: Option<BoardPosition>,
+    mut to: Option<BoardPosition>,
+) {
+    if let (Some(from), Some(to)) = (from, to) {
+        if !board_ui_factory.board.is_valid_move(&from, &to) {
+            move_entity(piece_entity, &mut commands, &mut board_ui_factory, &from);
+        } else {
+            remove_all_taken_pieces(
+                &mut commands,
+                &mut board_ui_factory,
+                pieces_query,
+                &from,
+                &to,
+            );
+            move_piece_to(piece_entity, &mut commands, board_ui_factory, &to);
+        }
+    }
+}
+
+fn remove_all_markers(
+    commands: &mut Commands,
+    marker_query: &Query<Entity, With<BoardPositionMarker>>,
+) {
+    for marker in marker_query.iter() {
+        commands.entity(marker).despawn();
+    }
+}
+
+fn remove_all_taken_pieces(
+    commands: &mut Commands,
+    board_ui_factory: &mut ResMut<BoardUiFactory>,
+    pieces_query: Query<(Entity, &BoardPieceComponent)>,
+    from: &BoardPosition,
+    to: &BoardPosition,
+) {
+    let side_effects = board_ui_factory.board.move_piece(&from, &to);
+    for (entity, board_piece) in pieces_query.iter() {
+        for takes in side_effects.takes.iter() {
+            if takes == &board_piece.0 {
+                commands.entity(entity).despawn();
+            }
+        }
+    }
+}
+
+fn move_entity(
+    entity: Entity,
+    commands: &mut Commands,
+    board_ui_factory: &ResMut<BoardUiFactory>,
+    to: &BoardPosition,
+) {
+    let transform = board_ui_factory.get_pos_transform(&to);
+    commands.entity(entity).insert(transform);
+}
+
+fn move_piece_to(
+    entity: Entity,
+    mut commands: &mut Commands,
+    board_ui_factory: ResMut<BoardUiFactory>,
+    to: &BoardPosition,
+) {
+    move_entity(entity, &mut commands, &board_ui_factory, &to);
+    commands
+        .entity(entity)
+        .insert(BoardPieceComponent(to.clone()));
+}
+
+fn get_pos<T: Component + WithBoardPosition>(
+    entity: Entity,
+    query: &Query<(Entity, &T)>,
+) -> Option<BoardPosition> {
+    query
+        .get(entity)
+        .ok()
+        .and_then(|(_, component)| Some(component.pos().clone()))
 }
