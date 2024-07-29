@@ -160,18 +160,33 @@ impl CheckerBoard {
 
     pub fn get_possible_moves(&self, from: &BoardPosition) -> Vec<BoardPosition> {
         let piece = self.pieces.get(from);
-        match piece {
+        return match piece {
             None => vec![],
-            Some(piece) => piece
-                .get_all_moves(&self, from)
-                .into_iter()
-                .filter(|pos| {
-                    let mut prediction_board = self.clone();
-                    prediction_board.force_move_piece(from, &pos);
-                    !prediction_board.is_checked(piece.color())
-                })
-                .collect(),
-        }
+            Some(piece) => {
+                let mut moves: Vec<BoardPosition> = piece
+                  .get_all_moves(&self, from)
+                  .into_iter()
+                  .filter(|pos| {
+                      let mut prediction_board = self.clone();
+                      prediction_board.force_move_piece(from, &pos);
+                      !prediction_board.is_checked(piece.color())
+                  })
+                  .collect();
+                if piece.piece_type() == &PieceType::King && !self.is_checked(piece.color()) {
+                    if let Some(piece) = self.piece_at(&BoardPosition::new(0, 0)) {
+                        if piece.piece_type() == &PieceType::Rook {
+                            moves.push(BoardPosition::new(2, 0));
+                        }
+                    }
+                    if let Some(piece) = self.piece_at(&BoardPosition::new(self.width() - 1, 0)) {
+                        if piece.piece_type() == &PieceType::Rook {
+                            moves.push(BoardPosition::new(6, 0));
+                        }
+                    }
+                }
+                moves
+            }
+        };
     }
 
     pub fn get_last_move(&self) -> Option<&BoardMove> {

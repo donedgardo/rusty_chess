@@ -35,7 +35,8 @@ impl Piece for King {
             (-1, -1),
             (1, -1),
         ];
-        eight_directions
+
+         eight_directions
             .iter()
             .map(|direction| (from.x() as i8 + direction.0, from.y() as i8 + direction.1))
             .filter(|direction| board.is_pos_valid(direction))
@@ -211,6 +212,52 @@ mod king_tests {
         let mut board = CheckerBoard::with_pieces(vec![ke2, d3]);
         let side_effects = board.move_piece(&board_pos!("e2"), &board_pos!("d3"));
         assert!(side_effects.takes.contains(&board_pos!("d3")));
+    }
+
+    #[test]
+    fn cant_castle_if_there_is_no_rook_in_a_or_h() {
+        let ke1 = BoardPiece::build(PieceType::King, PieceColor::White, "e1");
+        let board = CheckerBoard::with_pieces(vec![ke1]);
+        let moves = board.get_possible_moves(&board_pos!("e1"));
+        assert!(!moves.contains(&board_pos!("c1")));
+        assert!(!moves.contains(&board_pos!("g1")));
+    }
+
+    #[test]
+    fn can_castle_if_there_is_rook_of_same_color_in_a_or_h() {
+        let ke1 = BoardPiece::build(PieceType::King, PieceColor::White, "e1");
+        let ra1 = BoardPiece::build(PieceType::Rook, PieceColor::White, "a1");
+        let rh1 = BoardPiece::build(PieceType::Rook, PieceColor::White, "h1");
+        let board = CheckerBoard::with_pieces(vec![ke1, ra1, rh1]);
+        let moves = board.get_possible_moves(&board_pos!("e1"));
+        assert!(moves.contains(&board_pos!("c1")));
+        assert!(moves.contains(&board_pos!("g1")));
+    }
+
+    #[test]
+    fn cant_castle_if_king_is_checked() {
+        let ke1 = BoardPiece::build(PieceType::King, PieceColor::White, "e1");
+        let ra1 = BoardPiece::build(PieceType::Rook, PieceColor::White, "a1");
+        let rh1 = BoardPiece::build(PieceType::Rook, PieceColor::White, "h1");
+        let re2 = BoardPiece::build(PieceType::Rook, PieceColor::Black, "e2");
+        let board = CheckerBoard::with_pieces(vec![ke1, ra1, rh1, re2]);
+        let moves = board.get_possible_moves(&board_pos!("e1"));
+        assert!(!moves.contains(&board_pos!("c1")));
+        assert!(!moves.contains(&board_pos!("g1")));
+    }
+
+    #[test]
+    #[ignore]
+    fn cant_castle_if_king_on_the_way() {
+        let ke1 = BoardPiece::build(PieceType::King, PieceColor::White, "e1");
+        let ra1 = BoardPiece::build(PieceType::Rook, PieceColor::White, "a1");
+        let rh1 = BoardPiece::build(PieceType::Rook, PieceColor::White, "h1");
+        let rd2 = BoardPiece::build(PieceType::Rook, PieceColor::Black, "d2");
+        let rf2 = BoardPiece::build(PieceType::Rook, PieceColor::Black, "f2");
+        let board = CheckerBoard::with_pieces(vec![ke1, ra1, rh1, rd2, rf2]);
+        let moves = board.get_possible_moves(&board_pos!("e1"));
+        assert!(!moves.contains(&board_pos!("c1")));
+        assert!(!moves.contains(&board_pos!("g1")));
     }
 
     fn put_king_in_empty_board(pos: &str) -> Vec<BoardPosition> {
