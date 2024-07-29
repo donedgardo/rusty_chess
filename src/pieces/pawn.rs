@@ -822,7 +822,7 @@ mod black_pawn_tests {
         let pieces = vec![d4, c2];
         let mut board = CheckerBoard::with_pieces(pieces);
         board.move_piece(&board_pos!["c2"], &board_pos!["c4"]);
-        let takes = board.move_piece(&board_pos!("d4"), &board_pos!("c3"));
+         board.move_piece(&board_pos!("d4"), &board_pos!("c3"));
         assert!(board.piece_at(&board_pos!("c4")).is_none());
     }
 }

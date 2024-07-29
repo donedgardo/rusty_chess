@@ -3,7 +3,8 @@ use crate::board_position::BoardPosition;
 use crate::board_position_marker::BoardPositionMarker;
 use crate::pieces::color::PieceColor;
 use crate::pieces::piece_type::PieceType;
-use bevy::prelude::{BuildChildren, Commands, Entity, Resource, Transform};
+use crate::{BoardPieceComponent, WithBoardPosition};
+use bevy::prelude::{BuildChildren, Commands, Component, Entity, Query, Resource, Transform, With};
 use bevy::utils::HashMap;
 
 #[derive(Resource)]
@@ -61,7 +62,7 @@ impl BoardUiFactory {
                 None => return,
                 Some(entity) => {
                     commands.entity(*entity).with_children(|parent| {
-                        parent.spawn(BoardPositionMarker(board_position));
+                        parent.spawn(BoardPositionMarker);
                     });
                 }
             }
@@ -92,6 +93,78 @@ impl BoardUiFactory {
                 }
             }
         };
+    }
+
+
+    // not-tested
+    pub fn move_pieces(
+        &mut self,
+        piece_entity: Entity,
+        mut commands: &mut Commands,
+        pieces_query: Query<(Entity, &BoardPieceComponent)>,
+        from: Option<BoardPosition>,
+        to: Option<BoardPosition>,
+    ) {
+        if let (Some(from), Some(to)) = (from, to) {
+            if !self.board.is_valid_move(&from, &to) {
+                self.move_entity(piece_entity, &mut commands, &from);
+            } else {
+                self.remove_all_taken_pieces(&mut commands, pieces_query, &from, &to);
+                self.move_piece_to(piece_entity, &mut commands, &to);
+            }
+        }
+    }
+
+    // not-tested
+    pub fn move_entity(&self, entity: Entity, commands: &mut Commands, to: &BoardPosition) {
+        let transform = self.get_pos_transform(&to);
+        commands.entity(entity).insert(transform);
+    }
+    //not tested
+    pub fn move_piece_to(&self, entity: Entity, mut commands: &mut Commands, to: &BoardPosition) {
+        self.move_entity(entity, &mut commands, &to);
+        commands
+            .entity(entity)
+            .insert(BoardPieceComponent(to.clone()));
+    }
+    //not tested
+    pub fn remove_all_taken_pieces(
+        &mut self,
+        commands: &mut Commands,
+        pieces_query: Query<(Entity, &BoardPieceComponent)>,
+        from: &BoardPosition,
+        to: &BoardPosition,
+    ) {
+        let side_effects = self.board.move_piece(&from, &to);
+        for (entity, board_piece) in pieces_query.iter() {
+            for takes in side_effects.takes.iter() {
+                if takes == &board_piece.0 {
+                    commands.entity(entity).despawn();
+                }
+            }
+        }
+    }
+
+    // not tested
+    pub fn remove_all_markers(
+        commands: &mut Commands,
+        marker_query: &Query<Entity, With<BoardPositionMarker>>,
+    ) {
+        for marker in marker_query.iter() {
+            commands.entity(marker).despawn();
+        }
+    }
+
+
+    // not tested
+    pub fn get_pos<T: Component + WithBoardPosition>(
+        entity: Entity,
+        query: &Query<(Entity, &T)>,
+    ) -> Option<BoardPosition> {
+        query
+          .get(entity)
+          .ok()
+          .and_then(|(_, component)| Some(component.pos().clone()))
     }
 }
 

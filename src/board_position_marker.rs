@@ -1,9 +1,8 @@
-use crate::board_position::BoardPosition;
 use bevy::asset::AssetServer;
 use bevy::prelude::{default, Added, Commands, Component, Entity, Query, Res, SpriteBundle};
 
 #[derive(Component)]
-pub struct BoardPositionMarker(pub BoardPosition);
+pub struct BoardPositionMarker;
 
 pub fn add_board_pos_markers_sprite(
     mut commands: Commands,
