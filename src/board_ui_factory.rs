@@ -95,7 +95,6 @@ impl BoardUiFactory {
         };
     }
 
-
     // not-tested
     pub fn move_pieces(
         &mut self,
@@ -155,16 +154,15 @@ impl BoardUiFactory {
         }
     }
 
-
     // not tested
     pub fn get_pos<T: Component + WithBoardPosition>(
         entity: Entity,
         query: &Query<(Entity, &T)>,
     ) -> Option<BoardPosition> {
         query
-          .get(entity)
-          .ok()
-          .and_then(|(_, component)| Some(component.pos().clone()))
+            .get(entity)
+            .ok()
+            .and_then(|(_, component)| Some(component.pos().clone()))
     }
 }
 
