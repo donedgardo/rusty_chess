@@ -164,14 +164,14 @@ impl CheckerBoard {
             None => vec![],
             Some(piece) => {
                 let mut moves: Vec<BoardPosition> = piece
-                  .get_all_moves(&self, from)
-                  .into_iter()
-                  .filter(|pos| {
-                      let mut prediction_board = self.clone();
-                      prediction_board.force_move_piece(from, &pos);
-                      !prediction_board.is_checked(piece.color())
-                  })
-                  .collect();
+                    .get_all_moves(&self, from)
+                    .into_iter()
+                    .filter(|pos| {
+                        let mut prediction_board = self.clone();
+                        prediction_board.force_move_piece(from, &pos);
+                        !prediction_board.is_checked(piece.color())
+                    })
+                    .collect();
                 if piece.piece_type() == &PieceType::King && !self.is_checked(piece.color()) {
                     if let Some(piece) = self.piece_at(&BoardPosition::new(0, 0)) {
                         if piece.piece_type() == &PieceType::Rook {

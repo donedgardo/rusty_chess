@@ -36,7 +36,7 @@ impl Piece for King {
             (1, -1),
         ];
 
-         eight_directions
+        eight_directions
             .iter()
             .map(|direction| (from.x() as i8 + direction.0, from.y() as i8 + direction.1))
             .filter(|direction| board.is_pos_valid(direction))
