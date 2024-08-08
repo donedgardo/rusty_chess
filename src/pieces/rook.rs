@@ -1,4 +1,5 @@
 use crate::board::CheckerBoard;
+use crate::board_piece::BoardPiece;
 use crate::board_position::BoardPosition;
 use crate::pieces::color::PieceColor;
 use crate::pieces::horizontal_vertical_mover::HorizontalVerticalMovement;
@@ -44,6 +45,15 @@ impl Piece for Rook {
         if moves.contains(to) && board.piece_at(to).is_some() {
             return vec![to.clone()];
         }
+        vec![]
+    }
+
+    fn side_effects(
+        &self,
+        _board: &CheckerBoard,
+        _from: &BoardPosition,
+        _to: &BoardPosition,
+    ) -> Vec<BoardPiece> {
         vec![]
     }
 }

@@ -1,4 +1,5 @@
 use crate::board::CheckerBoard;
+use crate::board_piece::BoardPiece;
 use crate::board_position::BoardPosition;
 use color::PieceColor;
 use piece_type::PieceType;
@@ -26,6 +27,12 @@ pub trait Piece: CloneBox + Send + Sync {
         from: &BoardPosition,
         to: &BoardPosition,
     ) -> Vec<BoardPosition>;
+    fn side_effects(
+        &self,
+        board: &CheckerBoard,
+        from: &BoardPosition,
+        to: &BoardPosition,
+    ) -> Vec<BoardPiece>;
 }
 
 pub trait CloneBox {

@@ -1,5 +1,6 @@
 use crate::board::CheckerBoard;
 use crate::board_move::BoardMove;
+use crate::board_piece::BoardPiece;
 use crate::board_position::BoardPosition;
 use crate::pieces::color::PieceColor;
 use crate::pieces::piece_type::PieceType;
@@ -236,6 +237,15 @@ impl Piece for Pawn {
             }
         }
         takes
+    }
+
+    fn side_effects(
+        &self,
+        _board: &CheckerBoard,
+        _from: &BoardPosition,
+        _to: &BoardPosition,
+    ) -> Vec<BoardPiece> {
+        vec![]
     }
 }
 
@@ -814,15 +824,30 @@ mod black_pawn_tests {
         let takes = pawn.takes(&board, &board_pos!("d4"), &board_pos!("c3"));
         assert!(takes.contains(&board_pos!("c4")));
     }
+    #[test]
+    fn when_moving_regularly_no_side_effect() {
+        let d3 = BoardPiece::build(PieceType::Pawn, PieceColor::Black, "d3");
+        let a2 = BoardPiece::build(PieceType::Pawn, PieceColor::White, "a2");
+        let pieces = vec![a2, d3];
+        let mut board = CheckerBoard::with_pieces(pieces);
+        board.move_piece(&board_pos!["a2"], &board_pos!["a3"]);
+        let pawn = Pawn::new(PieceColor::Black);
+        let side_effects: Vec<BoardPiece> =
+            pawn.side_effects(&board, &board_pos!("d3"), &board_pos!("d2"));
+        assert_eq!(side_effects.len(), 0);
+    }
 
     #[test]
-    fn en_passant_removes_piece_from_board() {
-        let d4 = BoardPiece::build(PieceType::Pawn, PieceColor::Black, "d4");
-        let c2 = BoardPiece::build(PieceType::Pawn, PieceColor::White, "c2");
-        let pieces = vec![d4, c2];
+    #[ignore]
+    fn when_reaches_first_row_has_side_effect_of_promote() {
+        let d2 = BoardPiece::build(PieceType::Pawn, PieceColor::Black, "d2");
+        let a2 = BoardPiece::build(PieceType::Pawn, PieceColor::White, "a2");
+        let pieces = vec![a2, d2];
         let mut board = CheckerBoard::with_pieces(pieces);
-        board.move_piece(&board_pos!["c2"], &board_pos!["c4"]);
-        board.move_piece(&board_pos!("d4"), &board_pos!("c3"));
-        assert!(board.piece_at(&board_pos!("c4")).is_none());
+        board.move_piece(&board_pos!["a2"], &board_pos!["a3"]);
+        let pawn = Pawn::new(PieceColor::Black);
+        let side_effects: Vec<BoardPiece> =
+            pawn.side_effects(&board, &board_pos!("d2"), &board_pos!("d1"));
+        assert_eq!(side_effects.len(), 1);
     }
 }

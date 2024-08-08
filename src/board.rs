@@ -730,6 +730,16 @@ mod chess_board_tests {
         let side_effects = board.move_piece(&board_pos!("e7"), &board_pos!("e6"));
         assert!(side_effects.takes.is_empty());
     }
+    #[test]
+    fn side_effect_takes_removes_piece_from_board() {
+        let d4 = BoardPiece::build(PieceType::Pawn, PieceColor::Black, "d4");
+        let c2 = BoardPiece::build(PieceType::Pawn, PieceColor::White, "c2");
+        let pieces = vec![d4, c2];
+        let mut board = CheckerBoard::with_pieces(pieces);
+        board.move_piece(&board_pos!["c2"], &board_pos!["c4"]);
+        board.move_piece(&board_pos!("d4"), &board_pos!("c3"));
+        assert!(board.piece_at(&board_pos!("c4")).is_none());
+    }
 
     fn assert_all_pos_have_pieces(
         board: CheckerBoard,
