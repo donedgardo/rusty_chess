@@ -137,12 +137,16 @@ impl CheckerBoard {
     }
 
     pub fn move_piece(&mut self, from: &BoardPosition, to: &BoardPosition) -> BoardSideEffects {
-        let mut board_side_effects = BoardSideEffects { takes: vec![] };
+        let mut board_side_effects = BoardSideEffects {
+            takes: vec![],
+            updates: vec![],
+        };
         if !self.is_valid_move(from, to) {
             return board_side_effects;
         }
         if let Some(p) = self.piece_at(from) {
             board_side_effects.takes = p.takes(self, from, to);
+            board_side_effects.updates = p.side_effects(self, from, to);
         }
         if let Some(p) = self.pieces.remove(from) {
             for takes in board_side_effects.takes.iter() {
@@ -154,6 +158,10 @@ impl CheckerBoard {
                 to.clone(),
             ));
             self.pieces.insert(to.clone(), p);
+            for side_effect in board_side_effects.updates.iter() {
+                self.pieces
+                    .insert(side_effect.pos().clone(), side_effect.piece().clone());
+            }
         }
         board_side_effects
     }
@@ -739,6 +747,18 @@ mod chess_board_tests {
         board.move_piece(&board_pos!["c2"], &board_pos!["c4"]);
         board.move_piece(&board_pos!("d4"), &board_pos!("c3"));
         assert!(board.piece_at(&board_pos!("c4")).is_none());
+    }
+
+    #[test]
+    fn side_effects_mutate_board_in_promotion() {
+        let d7 = BoardPiece::build(PieceType::Pawn, PieceColor::White, "d7");
+        let pieces = vec![d7];
+        let mut board = CheckerBoard::with_pieces(pieces);
+        board.move_piece(&board_pos!["d7"], &board_pos!["d8"]);
+        let piece = board.piece_at(&board_pos!("d8"));
+        assert!(piece.is_some());
+        let piece = piece.unwrap();
+        assert_eq!(piece.piece_type(), &PieceType::Queen);
     }
 
     fn assert_all_pos_have_pieces(

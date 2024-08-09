@@ -241,11 +241,19 @@ impl Piece for Pawn {
 
     fn side_effects(
         &self,
-        _board: &CheckerBoard,
+        board: &CheckerBoard,
         _from: &BoardPosition,
-        _to: &BoardPosition,
+        to: &BoardPosition,
     ) -> Vec<BoardPiece> {
-        vec![]
+        if board.is_last_row_for_white(to) || board.is_last_row_for_black(to) {
+            vec![BoardPiece::build(
+                PieceType::Queen,
+                self.color().clone(),
+                &to.to_string().clone(),
+            )]
+        } else {
+            vec![]
+        }
     }
 }
 
@@ -550,6 +558,31 @@ mod white_pawn_tests {
         let takes = pawn.takes(&board, &board_pos!("c5"), &board_pos!("b6"));
         assert!(takes.contains(&board_pos!("b5")));
     }
+
+    #[test]
+    fn when_moving_regularly_no_side_effect() {
+        let a2 = BoardPiece::build(PieceType::Pawn, PieceColor::White, "a2");
+        let pieces = vec![a2];
+        let board = CheckerBoard::with_pieces(pieces);
+        let pawn = Pawn::new(PieceColor::White);
+        let side_effects: Vec<BoardPiece> =
+            pawn.side_effects(&board, &board_pos!("a2"), &board_pos!("a3"));
+        assert_eq!(side_effects.len(), 0);
+    }
+
+    #[test]
+    fn when_reaches_last_row_has_side_effect_of_promote() {
+        let a7 = BoardPiece::build(PieceType::Pawn, PieceColor::White, "a7");
+        let pieces = vec![a7];
+        let board = CheckerBoard::with_pieces(pieces);
+        let pawn = Pawn::new(PieceColor::White);
+        let side_effects: Vec<BoardPiece> =
+            pawn.side_effects(&board, &board_pos!("a7"), &board_pos!("a8"));
+        assert_eq!(side_effects.len(), 1);
+        assert_eq!(side_effects[0].piece().piece_type(), &PieceType::Queen);
+        assert_eq!(side_effects[0].piece().color(), &PieceColor::White);
+        assert_eq!(side_effects[0].pos(), &board_pos!("a8"));
+    }
 }
 
 #[cfg(test)]
@@ -838,7 +871,6 @@ mod black_pawn_tests {
     }
 
     #[test]
-    #[ignore]
     fn when_reaches_first_row_has_side_effect_of_promote() {
         let d2 = BoardPiece::build(PieceType::Pawn, PieceColor::Black, "d2");
         let a2 = BoardPiece::build(PieceType::Pawn, PieceColor::White, "a2");
@@ -849,5 +881,8 @@ mod black_pawn_tests {
         let side_effects: Vec<BoardPiece> =
             pawn.side_effects(&board, &board_pos!("d2"), &board_pos!("d1"));
         assert_eq!(side_effects.len(), 1);
+        assert_eq!(side_effects[0].piece().piece_type(), &PieceType::Queen);
+        assert_eq!(side_effects[0].piece().color(), &PieceColor::Black);
+        assert_eq!(side_effects[0].pos(), &board_pos!("d1"));
     }
 }

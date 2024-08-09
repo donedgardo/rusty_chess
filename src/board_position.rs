@@ -1,4 +1,6 @@
+use std::fmt::Display;
 use std::str::FromStr;
+use std::string::ToString;
 use thiserror::Error;
 
 #[derive(Debug, Hash, Clone, PartialEq, Eq)]
@@ -46,6 +48,14 @@ impl FromStr for BoardPosition {
             .ok_or(BoardPositionError::Invalid(s.into()))? as u8
             - 1;
         Ok(BoardPosition::new(x, y))
+    }
+}
+
+impl Display for BoardPosition {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let x = (self.x() + ('a' as u8)) as char;
+        let y = self.y() + 1;
+        write!(f, "{}", format!("{}{}", x.to_string(), y.to_string()))
     }
 }
 
@@ -131,5 +141,13 @@ mod board_pos_tests {
     #[should_panic]
     fn y_out_of_bounds_create_with_macro_should_panic() {
         let _pos = board_pos!("a9");
+    }
+
+    #[test]
+    fn can_turn_to_string() {
+        let pos = BoardPosition::new(0, 0);
+        assert_eq!(pos.to_string(), "a1");
+        let pos = BoardPosition::new(7, 7);
+        assert_eq!(pos.to_string(), "h8");
     }
 }
