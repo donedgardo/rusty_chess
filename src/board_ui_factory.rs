@@ -13,6 +13,7 @@ pub struct BoardUiFactory {
     pos_height: f32,
     pub board: CheckerBoard,
     pos_entities: HashMap<BoardPosition, Entity>,
+    piece_entities: HashMap<BoardPosition, Entity>,
 }
 
 impl BoardUiFactory {
@@ -22,6 +23,7 @@ impl BoardUiFactory {
             pos_height,
             board,
             pos_entities: HashMap::with_capacity(64),
+            piece_entities: HashMap::with_capacity(32),
         }
     }
     pub fn get_pos_transform(&self, pos: &BoardPosition) -> Transform {
@@ -93,6 +95,13 @@ impl BoardUiFactory {
                 }
             }
         };
+    }
+    pub fn get_piece_entity_at(&self, pos: &BoardPosition) -> Option<&Entity> {
+        self.piece_entities.get(pos)
+    }
+
+    pub fn add_piece_entity(&mut self, pos: &BoardPosition, entity: Entity) {
+        self.piece_entities.insert(pos.clone(), entity);
     }
 
     // not-tested
@@ -355,6 +364,25 @@ mod board_positions_test {
             board_ui_factory.get_sprite_index(&board_pos!("d8")),
             Some(5)
         );
+    }
+
+    #[test]
+    fn can_get_piece_entity() {
+        let board = CheckerBoard::default();
+        let board_ui_factory = create_board_ui_factory(68.5, 72., board);
+        let pos = board_pos!("a2");
+        assert_eq!(board_ui_factory.get_piece_entity_at(&pos), None);
+    }
+
+    #[test]
+    fn can_add_entity_for_piece() {
+        let board = CheckerBoard::default();
+        let mut board_ui_factory = create_board_ui_factory(68.5, 72., board);
+        let mut app = App::new();
+        let entity = app.world_mut().spawn(Transform::default()).id();
+        let pos = board_pos!("a2");
+        board_ui_factory.add_piece_entity(&pos, entity);
+        assert_eq!(board_ui_factory.get_piece_entity_at(&pos), Some(&entity));
     }
 
     fn create_board_ui_factory(width: f32, height: f32, board: CheckerBoard) -> BoardUiFactory {

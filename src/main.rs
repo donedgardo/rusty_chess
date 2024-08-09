@@ -129,7 +129,7 @@ fn setup(
             let texture = asset_server.load("pieces.png");
             let layout = TextureAtlasLayout::from_grid(UVec2::splat(54), 6, 2, None, None);
             let texture_atlas_layout = texture_atlas_layouts.add(layout);
-            commands.spawn((
+            let piece_entity = commands.spawn((
                 SpriteBundle {
                     texture,
                     transform: Transform::from_xyz(
@@ -180,7 +180,8 @@ fn setup(
                         BoardUiFactory::remove_all_markers(&mut commands, &marker_query);
                     },
                 ),
-            ));
+            )).id();
+            board_ui_factory.add_piece_entity(&pos, piece_entity);
         }
     }
 }
