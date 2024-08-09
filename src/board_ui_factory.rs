@@ -1,4 +1,5 @@
 use crate::board::CheckerBoard;
+use crate::board_piece::BoardPiece;
 use crate::board_position::BoardPosition;
 use crate::board_position_marker::BoardPositionMarker;
 use crate::pieces::color::PieceColor;
@@ -122,13 +123,22 @@ impl BoardUiFactory {
                 let side_effects = self.board.move_piece(&from, &to);
                 self.remove_all_taken_pieces(&mut commands, pieces_query, side_effects.takes);
                 self.move_piece_to(piece_entity, &mut commands, &from, &to);
-                for piece_update in side_effects.updates {
-                    if let Some(entity) = self.piece_entities.get(piece_update.pos()) {
-                        if let Some(mut texture) = texture_query.get_mut(entity.clone()).ok() {
-                            if let Some(index) = self.get_sprite_index(piece_update.pos()) {
-                                texture.index = index;
-                            }
-                        }
+                self.update_entities_from_side_effects(&mut texture_query, side_effects.updates);
+            }
+        }
+    }
+
+    // not tested
+    fn update_entities_from_side_effects(
+        &mut self,
+        texture_query: &mut Query<&mut TextureAtlas>,
+        side_effects: Vec<BoardPiece>,
+    ) {
+        for piece_update in side_effects {
+            if let Some(entity) = self.piece_entities.get(piece_update.pos()) {
+                if let Some(mut texture) = texture_query.get_mut(entity.clone()).ok() {
+                    if let Some(index) = self.get_sprite_index(piece_update.pos()) {
+                        texture.index = index;
                     }
                 }
             }
