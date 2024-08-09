@@ -109,6 +109,7 @@ fn setup(
                      mut board_ui_factory: ResMut<BoardUiFactory>,
                      board_piece_query: Query<(Entity, &BoardPieceComponent)>,
                      board_pos_query: Query<(Entity, &BoardPosComponent)>,
+                     texture_query: Query<&mut TextureAtlas>,
                      marker_query: Query<Entity, With<BoardPositionMarker>>| {
                         let from = BoardUiFactory::get_pos(event.dropped, &board_piece_query);
                         let to = BoardUiFactory::get_pos(event.target, &board_pos_query);
@@ -116,6 +117,7 @@ fn setup(
                             event.dropped,
                             &mut commands,
                             board_piece_query,
+                            texture_query,
                             from,
                             to,
                         );
@@ -167,6 +169,7 @@ fn setup(
                      mut commands: Commands,
                      mut board_ui_factory: ResMut<BoardUiFactory>,
                      pieces_query: Query<(Entity, &BoardPieceComponent)>,
+                     texture_query: Query<&mut TextureAtlas>,
                      marker_query: Query<Entity, With<BoardPositionMarker>>| {
                         let from = BoardUiFactory::get_pos(event.dropped, &pieces_query);
                         let to = BoardUiFactory::get_pos(event.target, &pieces_query);
@@ -174,6 +177,7 @@ fn setup(
                             event.dropped,
                             &mut commands,
                             pieces_query,
+                            texture_query,
                             from,
                             to,
                         );

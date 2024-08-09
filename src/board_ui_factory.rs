@@ -5,6 +5,7 @@ use crate::pieces::color::PieceColor;
 use crate::pieces::piece_type::PieceType;
 use crate::{BoardPieceComponent, WithBoardPosition};
 use bevy::prelude::{BuildChildren, Commands, Component, Entity, Query, Resource, Transform, With};
+use bevy::sprite::TextureAtlas;
 use bevy::utils::HashMap;
 
 #[derive(Resource)]
@@ -110,6 +111,7 @@ impl BoardUiFactory {
         piece_entity: Entity,
         mut commands: &mut Commands,
         pieces_query: Query<(Entity, &BoardPieceComponent)>,
+        mut texture_query: Query<&mut TextureAtlas>,
         from: Option<BoardPosition>,
         to: Option<BoardPosition>,
     ) {
@@ -120,6 +122,15 @@ impl BoardUiFactory {
                 let side_effects = self.board.move_piece(&from, &to);
                 self.remove_all_taken_pieces(&mut commands, pieces_query, side_effects.takes);
                 self.move_piece_to(piece_entity, &mut commands, &from, &to);
+                for piece_update in side_effects.updates {
+                    if let Some(entity) = self.piece_entities.get(piece_update.pos()) {
+                        if let Some(mut texture) = texture_query.get_mut(entity.clone()).ok() {
+                            if let Some(index) = self.get_sprite_index(piece_update.pos()) {
+                                texture.index = index;
+                            }
+                        }
+                    }
+                }
             }
         }
     }
