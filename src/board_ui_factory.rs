@@ -108,7 +108,8 @@ impl BoardUiFactory {
             if !self.board.is_valid_move(&from, &to) {
                 self.move_entity(piece_entity, &mut commands, &from);
             } else {
-                self.remove_all_taken_pieces(&mut commands, pieces_query, &from, &to);
+                let side_effects = self.board.move_piece(&from, &to);
+                self.remove_all_taken_pieces(&mut commands, pieces_query, side_effects.takes);
                 self.move_piece_to(piece_entity, &mut commands, &to);
             }
         }
@@ -131,12 +132,10 @@ impl BoardUiFactory {
         &mut self,
         commands: &mut Commands,
         pieces_query: Query<(Entity, &BoardPieceComponent)>,
-        from: &BoardPosition,
-        to: &BoardPosition,
+        takes: Vec<BoardPosition>,
     ) {
-        let side_effects = self.board.move_piece(&from, &to);
         for (entity, board_piece) in pieces_query.iter() {
-            for takes in side_effects.takes.iter() {
+            for takes in takes.iter() {
                 if takes == &board_piece.0 {
                     commands.entity(entity).despawn();
                 }
