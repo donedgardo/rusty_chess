@@ -115,23 +115,36 @@ impl BoardUiFactory {
     ) {
         if let (Some(from), Some(to)) = (from, to) {
             if !self.board.is_valid_move(&from, &to) {
-                self.move_entity(piece_entity, &mut commands, &from);
+                self.move_piece_entity_transform(piece_entity, &mut commands, &from);
             } else {
                 let side_effects = self.board.move_piece(&from, &to);
                 self.remove_all_taken_pieces(&mut commands, pieces_query, side_effects.takes);
-                self.move_piece_to(piece_entity, &mut commands, &to);
+                self.move_piece_to(piece_entity, &mut commands, &from, &to);
             }
         }
     }
 
     // not-tested
-    pub fn move_entity(&self, entity: Entity, commands: &mut Commands, to: &BoardPosition) {
+    pub fn move_piece_entity_transform(
+        &self,
+        entity: Entity,
+        commands: &mut Commands,
+        to: &BoardPosition,
+    ) {
         let transform = self.get_pos_transform(&to);
         commands.entity(entity).insert(transform);
     }
     //not tested
-    pub fn move_piece_to(&self, entity: Entity, mut commands: &mut Commands, to: &BoardPosition) {
-        self.move_entity(entity, &mut commands, &to);
+    pub fn move_piece_to(
+        &mut self,
+        entity: Entity,
+        mut commands: &mut Commands,
+        from: &BoardPosition,
+        to: &BoardPosition,
+    ) {
+        self.piece_entities.remove(from);
+        self.piece_entities.insert(to.clone(), entity);
+        self.move_piece_entity_transform(entity, &mut commands, &to);
         commands
             .entity(entity)
             .insert(BoardPieceComponent(to.clone()));
@@ -145,6 +158,7 @@ impl BoardUiFactory {
     ) {
         for (entity, board_piece) in pieces_query.iter() {
             for takes in takes.iter() {
+                self.piece_entities.remove(takes);
                 if takes == &board_piece.0 {
                     commands.entity(entity).despawn();
                 }
