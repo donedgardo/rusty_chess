@@ -1,5 +1,6 @@
 use crate::board_move::BoardMove;
 use crate::board_piece::BoardPiece;
+use crate::board_pos;
 use crate::board_position::BoardPosition;
 use crate::board_side_effects::BoardSideEffects;
 use crate::pieces::color::PieceColor;
@@ -7,6 +8,7 @@ use crate::pieces::factory::PieceFactory;
 use crate::pieces::piece_type::PieceType;
 use crate::pieces::Piece;
 use std::collections::HashMap;
+use std::str::FromStr;
 
 #[derive(Clone)]
 pub struct CheckerBoard {
@@ -154,6 +156,7 @@ impl CheckerBoard {
             }
             self.moves.push(BoardMove::new(
                 p.piece_type().clone(),
+                p.color().clone(),
                 from.clone(),
                 to.clone(),
             ));
@@ -171,30 +174,62 @@ impl CheckerBoard {
         return match piece {
             None => vec![],
             Some(piece) => {
-                let mut moves: Vec<BoardPosition> = piece
+                // Castling is the only move that needs to check if it's checked.
+                // Castling Logic Can't live inside King since we have to check for is_checked.
+                // If we do, it causes stack overflow (infinite loop).
+                // board.is_checked -> piece.get_all_moves -> board.is_checked -> piece.get_all_moves
+                let castle_moves = self.get_castle_moves(from, piece);
+
+                piece
                     .get_all_moves(&self, from)
                     .into_iter()
+                    .chain(castle_moves)
                     .filter(|pos| {
                         let mut prediction_board = self.clone();
                         prediction_board.force_move_piece(from, &pos);
                         !prediction_board.is_checked(piece.color())
                     })
-                    .collect();
-                if piece.piece_type() == &PieceType::King && !self.is_checked(piece.color()) {
-                    if let Some(piece) = self.piece_at(&BoardPosition::new(0, 0)) {
-                        if piece.piece_type() == &PieceType::Rook {
-                            moves.push(BoardPosition::new(2, 0));
-                        }
-                    }
-                    if let Some(piece) = self.piece_at(&BoardPosition::new(self.width() - 1, 0)) {
-                        if piece.piece_type() == &PieceType::Rook {
-                            moves.push(BoardPosition::new(6, 0));
-                        }
-                    }
-                }
-                moves
+                    .collect()
             }
         };
+    }
+
+    fn get_castle_moves(&self, from: &BoardPosition, piece: &Box<dyn Piece>) -> Vec<BoardPosition> {
+        let mut castle_moves = Vec::with_capacity(2);
+        if piece.piece_type() != &PieceType::King
+            || self.moves.iter().any(|board_move| {
+                board_move.piece_type() == &PieceType::King
+                    && board_move.piece_color() == piece.color()
+            })
+            || self.is_checked(piece.color())
+        {
+            return castle_moves;
+        }
+        if let Some(a1_piece) = self.piece_at(&board_pos!["a1"]) {
+            if a1_piece.piece_type() == &PieceType::Rook
+                && self.piece_at(&board_pos!["d1"]).is_none()
+                && self.piece_at(&board_pos!["c1"]).is_none()
+            {
+                let mut prediction_board = self.clone();
+                prediction_board.force_move_piece(from, &board_pos!["d1"]);
+                if !prediction_board.is_checked(piece.color()) {
+                    castle_moves.push(board_pos!["c1"]);
+                }
+            }
+        }
+        if let Some(h1_piece) = self.piece_at(&board_pos!["h1"]) {
+            if h1_piece.piece_type() == &PieceType::Rook
+                && self.piece_at(&board_pos!["g1"]).is_none()
+                && self.piece_at(&board_pos!["f1"]).is_none()
+            {
+                let mut prediction_board = self.clone();
+                prediction_board.force_move_piece(from, &board_pos!["f1"]);
+                if !prediction_board.is_checked(piece.color()) {
+                    castle_moves.push(board_pos!["g1"]);
+                }
+            }
+        }
+        castle_moves
     }
 
     pub fn get_last_move(&self) -> Option<&BoardMove> {

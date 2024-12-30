@@ -450,7 +450,12 @@ mod white_pawn_tests {
     #[test]
     fn cant_en_passant_if_last_move_is_not_adjacent() {
         let d5 = Pawn::new(PieceColor::White);
-        let last_move = BoardMove::new(PieceType::Pawn, board_pos!("a7"), board_pos!("a5"));
+        let last_move = BoardMove::new(
+            PieceType::Pawn,
+            PieceColor::Black,
+            board_pos!("a7"),
+            board_pos!("a5"),
+        );
         let possible_takes = d5.get_possible_en_passant_take(&board_pos!("d5"), Some(&last_move));
         assert!(possible_takes.is_none());
     }
@@ -458,7 +463,12 @@ mod white_pawn_tests {
     #[test]
     fn cant_en_passant_if_last_move_is_not_two_squared_move() {
         let d5 = Pawn::new(PieceColor::White);
-        let last_move = BoardMove::new(PieceType::Pawn, board_pos!("c6"), board_pos!("c5"));
+        let last_move = BoardMove::new(
+            PieceType::Pawn,
+            PieceColor::Black,
+            board_pos!("c6"),
+            board_pos!("c5"),
+        );
         let possible_takes = d5.get_possible_en_passant_take(&board_pos!("d5"), Some(&last_move));
         assert!(possible_takes.is_none());
     }
@@ -466,7 +476,12 @@ mod white_pawn_tests {
     #[test]
     fn cant_en_passant_if_last_move_is_not_pawn() {
         let d5 = Pawn::new(PieceColor::White);
-        let last_move = BoardMove::new(PieceType::Knight, board_pos!("c7"), board_pos!("c5"));
+        let last_move = BoardMove::new(
+            PieceType::Knight,
+            PieceColor::Black,
+            board_pos!("c7"),
+            board_pos!("c5"),
+        );
         let possible_takes = d5.get_possible_en_passant_take(&board_pos!("d5"), Some(&last_move));
         assert!(possible_takes.is_none());
     }
@@ -474,7 +489,12 @@ mod white_pawn_tests {
     #[test]
     fn can_en_passant_if_last_move_is_two_squared_move() {
         let d5 = Pawn::new(PieceColor::White);
-        let last_move = BoardMove::new(PieceType::Pawn, board_pos!("c7"), board_pos!("c5"));
+        let last_move = BoardMove::new(
+            PieceType::Pawn,
+            PieceColor::Black,
+            board_pos!("c7"),
+            board_pos!("c5"),
+        );
         let possible_takes = d5.get_possible_en_passant_take(&board_pos!("d5"), Some(&last_move));
         assert_eq!(possible_takes, Some(board_pos!("c6")));
     }
@@ -765,7 +785,12 @@ mod black_pawn_tests {
     #[test]
     fn cant_en_passant_if_last_move_is_not_adjacent() {
         let d4 = Pawn::new(PieceColor::Black);
-        let last_move = BoardMove::new(PieceType::Pawn, board_pos!("d4"), board_pos!("a4"));
+        let last_move = BoardMove::new(
+            PieceType::Pawn,
+            PieceColor::Black,
+            board_pos!("d4"),
+            board_pos!("a4"),
+        );
         let possible_takes = d4.get_possible_en_passant_take(&board_pos!("d4"), Some(&last_move));
         assert!(possible_takes.is_none());
     }
@@ -773,7 +798,12 @@ mod black_pawn_tests {
     #[test]
     fn cant_en_passant_if_last_move_is_not_two_squared_move() {
         let d4 = Pawn::new(PieceColor::White);
-        let last_move = BoardMove::new(PieceType::Pawn, board_pos!("c2"), board_pos!("c3"));
+        let last_move = BoardMove::new(
+            PieceType::Pawn,
+            PieceColor::Black,
+            board_pos!("c2"),
+            board_pos!("c3"),
+        );
         let possible_takes = d4.get_possible_en_passant_take(&board_pos!("d4"), Some(&last_move));
         assert!(possible_takes.is_none());
     }
@@ -781,7 +811,12 @@ mod black_pawn_tests {
     #[test]
     fn cant_en_passant_if_last_move_is_not_a_pawn() {
         let d4 = Pawn::new(PieceColor::Black);
-        let last_move = BoardMove::new(PieceType::Knight, board_pos!("c2"), board_pos!("c4"));
+        let last_move = BoardMove::new(
+            PieceType::Knight,
+            PieceColor::Black,
+            board_pos!("c2"),
+            board_pos!("c4"),
+        );
         let possible_takes = d4.get_possible_en_passant_take(&board_pos!("d4"), Some(&last_move));
         assert!(possible_takes.is_none());
     }
@@ -800,7 +835,12 @@ mod black_pawn_tests {
     #[test]
     fn can_en_passant_if_last_move_is_two_squared_move() {
         let d4 = Pawn::new(PieceColor::Black);
-        let last_move = BoardMove::new(PieceType::Pawn, board_pos!("c2"), board_pos!("c4"));
+        let last_move = BoardMove::new(
+            PieceType::Pawn,
+            PieceColor::Black,
+            board_pos!("c2"),
+            board_pos!("c4"),
+        );
         let possible_takes = d4.get_possible_en_passant_take(&board_pos!("d4"), Some(&last_move));
         assert_eq!(possible_takes, Some(board_pos!("c3")));
     }
