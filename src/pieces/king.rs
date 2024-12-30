@@ -237,6 +237,7 @@ mod white_castling_tests {
     use crate::board::CheckerBoard;
     use crate::board_piece::BoardPiece;
     use crate::board_pos;
+    use crate::board_side_effects::BoardSideEffects;
     use crate::pieces::color::PieceColor;
     use crate::pieces::piece_type::PieceType;
     use std::str::FromStr;
@@ -341,16 +342,56 @@ mod white_castling_tests {
 
     #[test]
     fn cant_castle_if_king_has_moved() {
-        let ke1 = BoardPiece::build(PieceType::King, PieceColor::White, "d1");
+        let kd1 = BoardPiece::build(PieceType::King, PieceColor::White, "d1");
         let ra1 = BoardPiece::build(PieceType::Rook, PieceColor::White, "a1");
         let rh1 = BoardPiece::build(PieceType::Rook, PieceColor::White, "h1");
         let d7 = BoardPiece::build(PieceType::Pawn, PieceColor::Black, "d7");
-        let mut board = CheckerBoard::with_pieces(vec![ke1, ra1, rh1, d7]);
+        let mut board = CheckerBoard::with_pieces(vec![kd1, ra1, rh1, d7]);
         board.move_piece(&board_pos!["d1"], &board_pos!["e1"]);
         board.move_piece(&board_pos!["d7"], &board_pos!["d5"]);
 
         let moves = board.get_possible_moves(&board_pos!("e1"));
         assert!(!moves.contains(&board_pos!("c1")));
         assert!(!moves.contains(&board_pos!("g1")));
+    }
+
+    #[test]
+    #[ignore]
+    fn castling_queen_side_updates_a1_to_empty() {
+        let (board, _) = castle_queen_side();
+        assert!(board.piece_at(&board_pos!("a1")).is_none());
+    }
+
+    #[test]
+    #[ignore]
+    fn castling_queen_side_updates_d1_with_rook() {
+        let (board, _) = castle_queen_side();
+        let rd1 = board.piece_at(&board_pos!("d1")).unwrap();
+        assert_eq!(rd1.piece_type(), &PieceType::Rook);
+        assert_eq!(rd1.color(), &PieceColor::White);
+    }
+
+    #[test]
+    #[ignore]
+    fn castling_queen_side_move_has_correct_side_effects() {
+        let (board, side_effects) = castle_queen_side();
+        // I think updates shouldn't be a vec of board pieces, since some updates are an empty pos.
+        // assert!(side_effects
+        //     .updates
+        //     .contains(&BoardPiece::build(None, None, "a1")));
+        // assert!(side_effects.updates.contains(&BoardPiece::build(
+        //     PieceType::Rook,
+        //     PieceColor::White,
+        //     "d1"
+        // )));
+    }
+
+    fn castle_queen_side() -> (CheckerBoard, BoardSideEffects) {
+        let ke1 = BoardPiece::build(PieceType::King, PieceColor::White, "e1");
+        let ra1 = BoardPiece::build(PieceType::Rook, PieceColor::White, "a1");
+        let rh1 = BoardPiece::build(PieceType::Rook, PieceColor::White, "h1");
+        let mut board = CheckerBoard::with_pieces(vec![ke1, ra1, rh1]);
+        let side_effects = board.move_piece(&board_pos!["e1"], &board_pos!["c1"]);
+        (board, side_effects)
     }
 }

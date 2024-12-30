@@ -22,6 +22,14 @@ impl BoardPiece {
     }
 }
 
+impl PartialEq for BoardPiece {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+            && self.1.piece_type() == other.1.piece_type()
+            && self.1.color() == other.1.color()
+    }
+}
+
 #[cfg(test)]
 mod board_piece_test {
     use super::*;
