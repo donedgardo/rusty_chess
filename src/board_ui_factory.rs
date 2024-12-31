@@ -1,15 +1,15 @@
 use crate::board::CheckerBoard;
-use crate::board_piece::BoardPiece;
 use crate::board_position::BoardPosition;
 use crate::board_position_marker::BoardPositionMarker;
 use crate::board_side_effects::BoardUpdate;
 use crate::pieces::color::PieceColor;
 use crate::pieces::piece_type::PieceType;
-use crate::pieces::Piece;
 use crate::{BoardPieceComponent, WithBoardPosition};
-use bevy::prelude::{BuildChildren, Commands, Component, Entity, Query, Resource, Transform, With};
+use bevy::prelude::*;
 use bevy::sprite::TextureAtlas;
 use bevy::utils::HashMap;
+use bevy_mod_picking::prelude::*;
+use bevy_mod_picking::PickableBundle;
 
 #[derive(Resource)]
 pub struct BoardUiFactory {
@@ -117,6 +117,8 @@ impl BoardUiFactory {
         mut texture_query: Query<&mut TextureAtlas>,
         from: Option<BoardPosition>,
         to: Option<BoardPosition>,
+        asset_server: &Res<AssetServer>,
+        texture_atlas_layouts: &mut ResMut<Assets<TextureAtlasLayout>>,
     ) {
         if let (Some(from), Some(to)) = (from, to) {
             if !self.board.is_valid_move(&from, &to) {
@@ -129,8 +131,88 @@ impl BoardUiFactory {
                     &mut texture_query,
                     side_effects.updatesZ,
                     &mut commands,
+                    asset_server,
+                    texture_atlas_layouts,
                 );
             }
+        }
+    }
+
+    pub fn create_board_piece_entity(
+        &mut self,
+        commands: &mut Commands,
+        asset_server: &Res<AssetServer>,
+        texture_atlas_layouts: &mut ResMut<Assets<TextureAtlasLayout>>,
+        pos: &BoardPosition,
+    ) {
+        let pos_transform = self.get_pos_transform(pos);
+        if let Some(index) = self.get_sprite_index(&pos) {
+            let texture = asset_server.load("pieces.png");
+            let layout = TextureAtlasLayout::from_grid(UVec2::splat(54), 6, 2, None, None);
+            // TODO:: Performance.
+            // Instead of creating a new atlas layout we can get the one we created on setup.
+            let texture_atlas_layout = texture_atlas_layouts.add(layout);
+            let piece_entity = commands
+                .spawn((
+                    SpriteBundle {
+                        texture,
+                        transform: Transform::from_xyz(
+                            pos_transform.translation.x,
+                            pos_transform.translation.y,
+                            pos_transform.translation.z + 1.,
+                        ),
+                        ..default()
+                    },
+                    TextureAtlas {
+                        layout: texture_atlas_layout,
+                        index,
+                    },
+                    BoardPieceComponent(pos.clone()),
+                    PickableBundle::default(),
+                    On::<Pointer<DragStart>>::run(
+                        |event: Listener<Pointer<DragStart>>,
+                         mut commands: Commands,
+                         board_ui_factory: Res<BoardUiFactory>,
+                         query: Query<&BoardPieceComponent>| {
+                            commands.entity(event.target).insert(Pickable::IGNORE);
+                            for board_piece in query.get(event.target).into_iter() {
+                                board_ui_factory
+                                    .add_markers_to_possible_board_moves(&board_piece.0, &mut commands);
+                            }
+                        },
+                    ),
+                    On::<Pointer<Drag>>::target_component_mut::<Transform>(|drag, transform| {
+                        transform.translation.x += drag.delta.x;
+                        transform.translation.y -= drag.delta.y;
+                    }),
+                    On::<Pointer<DragEnd>>::target_insert(Pickable::default()),
+                    On::<Pointer<Drop>>::run(
+                        |event: Listener<Pointer<Drop>>,
+                         mut commands: Commands,
+                         asset_server: Res<AssetServer>,
+                         mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+                         mut board_ui_factory: ResMut<BoardUiFactory>,
+                         pieces_query: Query<(Entity, &BoardPieceComponent)>,
+                         texture_query: Query<&mut TextureAtlas>,
+                         marker_query: Query<Entity, With<BoardPositionMarker>>| {
+                            let from = BoardUiFactory::get_pos(event.dropped, &pieces_query);
+                            let to = BoardUiFactory::get_pos(event.target, &pieces_query);
+                            board_ui_factory.move_pieces(
+                                event.dropped,
+                                &mut commands,
+                                pieces_query,
+                                texture_query,
+                                from,
+                                to,
+                                &asset_server,
+                                &mut texture_atlas_layouts
+                            );
+                            BoardUiFactory::remove_all_markers(&mut commands, &marker_query);
+                        },
+                    ),
+                ))
+                .id();
+            self.add_piece_entity(&pos, piece_entity);
         }
     }
 
@@ -140,6 +222,8 @@ impl BoardUiFactory {
         texture_query: &mut Query<&mut TextureAtlas>,
         side_effects: Vec<BoardUpdate>,
         commands: &mut Commands,
+        asset_server: &Res<AssetServer>,
+        texture_atlas_layouts: &mut ResMut<Assets<TextureAtlasLayout>>,
     ) {
         for board_update in side_effects {
             match board_update.piece() {
@@ -155,6 +239,13 @@ impl BoardUiFactory {
                                 texture.index = index;
                             }
                         }
+                    } else {
+                        self.create_board_piece_entity(
+                            commands,
+                            &asset_server,
+                            texture_atlas_layouts,
+                            board_update.pos(),
+                        );
                     }
                 }
             }

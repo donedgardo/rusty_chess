@@ -1,6 +1,5 @@
 use crate::board::CheckerBoard;
 use crate::board_move::BoardMove;
-use crate::board_piece::BoardPiece;
 use crate::board_position::BoardPosition;
 use crate::board_side_effects::BoardUpdate;
 use crate::pieces::color::PieceColor;

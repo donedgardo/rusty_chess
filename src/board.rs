@@ -203,7 +203,6 @@ impl CheckerBoard {
     }
 
     fn get_castle_moves(&self, from: &BoardPosition, piece: &Box<dyn Piece>) -> Vec<BoardPosition> {
-        let mut castle_moves = Vec::with_capacity(2);
         if piece.piece_type() != &PieceType::King
             || self.moves.iter().any(|board_move| {
                 board_move.piece_type() == &PieceType::King
@@ -211,29 +210,71 @@ impl CheckerBoard {
             })
             || self.is_checked(piece.color())
         {
-            return castle_moves;
+            return vec![];
         }
-        if let Some(a1_piece) = self.piece_at(&board_pos!["a1"]) {
+        match piece.color() {
+            PieceColor::White => {
+                let queen_rook_pos = "a1";
+                let queen_castle_path = ["d1", "c1"];
+                let king_rook_pos = "h1";
+                let king_castle_path = ["f1", "g1"];
+                self.get_castle_moves_from_path(
+                    from,
+                    piece,
+                    &queen_rook_pos,
+                    &queen_castle_path,
+                    &king_rook_pos,
+                    &king_castle_path,
+                )
+            }
+            PieceColor::Black => {
+                let queen_rook_pos = "a8";
+                let queen_castle_path = ["d8", "c8"];
+                let king_rook_pos = "h8";
+                let king_castle_path = ["f8", "g8"];
+                self.get_castle_moves_from_path(
+                    from,
+                    piece,
+                    &queen_rook_pos,
+                    &queen_castle_path,
+                    &king_rook_pos,
+                    &king_castle_path,
+                )
+            }
+        }
+    }
+
+    fn get_castle_moves_from_path(
+        &self,
+        from: &BoardPosition,
+        piece: &Box<dyn Piece>,
+        queen_rook_pos: &&str,
+        queen_castle_path: &[&str; 2],
+        king_rook_pos: &str,
+        king_castle_path: &[&str; 2],
+    ) -> Vec<BoardPosition> {
+        let mut castle_moves = Vec::with_capacity(2);
+        if let Some(a1_piece) = self.piece_at(&board_pos![queen_rook_pos]) {
             if a1_piece.piece_type() == &PieceType::Rook
-                && self.piece_at(&board_pos!["d1"]).is_none()
-                && self.piece_at(&board_pos!["c1"]).is_none()
+                && self.piece_at(&board_pos![&queen_castle_path[0]]).is_none()
+                && self.piece_at(&board_pos![&queen_castle_path[1]]).is_none()
             {
                 let mut prediction_board = self.clone();
-                prediction_board.force_move_piece(from, &board_pos!["d1"]);
+                prediction_board.force_move_piece(from, &board_pos![&queen_castle_path[0]]);
                 if !prediction_board.is_checked(piece.color()) {
-                    castle_moves.push(board_pos!["c1"]);
+                    castle_moves.push(board_pos![&queen_castle_path[1]]);
                 }
             }
         }
-        if let Some(h1_piece) = self.piece_at(&board_pos!["h1"]) {
+        if let Some(h1_piece) = self.piece_at(&board_pos![king_rook_pos]) {
             if h1_piece.piece_type() == &PieceType::Rook
-                && self.piece_at(&board_pos!["g1"]).is_none()
-                && self.piece_at(&board_pos!["f1"]).is_none()
+                && self.piece_at(&board_pos![&king_castle_path[0]]).is_none()
+                && self.piece_at(&board_pos![&king_castle_path[1]]).is_none()
             {
                 let mut prediction_board = self.clone();
-                prediction_board.force_move_piece(from, &board_pos!["f1"]);
+                prediction_board.force_move_piece(from, &board_pos![&king_castle_path[0]]);
                 if !prediction_board.is_checked(piece.color()) {
-                    castle_moves.push(board_pos!["g1"]);
+                    castle_moves.push(board_pos![&king_castle_path[1]]);
                 }
             }
         }
