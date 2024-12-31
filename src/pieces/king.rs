@@ -17,6 +17,24 @@ impl King {
     pub fn new(color: PieceColor) -> Self {
         Self { color }
     }
+
+    fn is_castle_move(
+        from: &BoardPosition,
+        to: &BoardPosition,
+        queen_castle_move: &[BoardPosition; 2],
+    ) -> bool {
+        from == &queen_castle_move[0] && to == &queen_castle_move[1]
+    }
+
+    fn get_side_effects_for_castle(&self, queen_rook_move: [BoardPosition; 2]) -> Vec<BoardUpdate> {
+        vec![
+            BoardUpdate(queen_rook_move[0].clone(), None),
+            BoardUpdate(
+                queen_rook_move[1].clone(),
+                Some(PieceFactory::build(PieceType::Rook, self.color.clone())),
+            ),
+        ]
+    }
 }
 
 impl Piece for King {
@@ -73,22 +91,22 @@ impl Piece for King {
         from: &BoardPosition,
         to: &BoardPosition,
     ) -> Vec<BoardUpdate> {
-        if from == &board_pos!["e1"] && to == &board_pos!["c1"] {
-            vec![
-                BoardUpdate(board_pos!["a1"], None),
-                BoardUpdate(
-                    board_pos!["d1"],
-                    Some(PieceFactory::build(PieceType::Rook, PieceColor::White)),
-                ),
-            ]
-        } else if from == &board_pos!["e1"] && to == &board_pos!["g1"] {
-            vec![
-                BoardUpdate(board_pos!["h1"], None),
-                BoardUpdate(
-                    board_pos!["f1"],
-                    Some(PieceFactory::build(PieceType::Rook, PieceColor::White)),
-                ),
-            ]
+        let white_queen_castle_move = [board_pos!["e1"], board_pos!["c1"]];
+        let white_king_castle_move = [board_pos!["e1"], board_pos!["g1"]];
+        let black_queen_castle_move = [board_pos!["e8"], board_pos!["c8"]];
+        let black_king_castle_move = [board_pos!["e8"], board_pos!["g8"]];
+        if Self::is_castle_move(from, to, &white_queen_castle_move) {
+            let queen_rook_move = [board_pos!["a1"], board_pos!["d1"]];
+            self.get_side_effects_for_castle(queen_rook_move)
+        } else if Self::is_castle_move(from, to, &white_king_castle_move) {
+            let king_rook_move = [board_pos!["h1"], board_pos!["f1"]];
+            self.get_side_effects_for_castle(king_rook_move)
+        } else if Self::is_castle_move(from, to, &black_queen_castle_move) {
+            let queen_rook_move = [board_pos!["a8"], board_pos!["d8"]];
+            self.get_side_effects_for_castle(queen_rook_move)
+        } else if Self::is_castle_move(from, to, &black_king_castle_move) {
+            let king_rook_move = [board_pos!["h8"], board_pos!["f8"]];
+            self.get_side_effects_for_castle(king_rook_move)
         } else {
             vec![]
         }
@@ -406,11 +424,11 @@ mod white_castling_tests {
     #[test]
     fn castling_queen_side_move_has_correct_side_effects() {
         let (_, side_effects) = castle_queen_side();
-        assert_eq!(side_effects.updatesZ[0].pos(), &board_pos!["a1"]);
-        assert!(side_effects.updatesZ[0].piece().is_none());
+        assert_eq!(side_effects.updates[0].pos(), &board_pos!["a1"]);
+        assert!(side_effects.updates[0].piece().is_none());
 
-        assert_eq!(side_effects.updatesZ[1].pos(), &board_pos!["d1"]);
-        let updated_piece = side_effects.updatesZ[1].piece().clone().unwrap();
+        assert_eq!(side_effects.updates[1].pos(), &board_pos!["d1"]);
+        let updated_piece = side_effects.updates[1].piece().clone().unwrap();
         assert_eq!(updated_piece.color(), &PieceColor::White);
         assert_eq!(updated_piece.piece_type(), &PieceType::Rook);
     }
@@ -418,11 +436,11 @@ mod white_castling_tests {
     #[test]
     fn castling_king_side_move_has_correct_side_effects() {
         let (_, side_effects) = castle_king_side();
-        assert_eq!(side_effects.updatesZ[0].pos(), &board_pos!["h1"]);
-        assert!(side_effects.updatesZ[0].piece().is_none());
+        assert_eq!(side_effects.updates[0].pos(), &board_pos!["h1"]);
+        assert!(side_effects.updates[0].piece().is_none());
 
-        assert_eq!(side_effects.updatesZ[1].pos(), &board_pos!["f1"]);
-        let updated_piece = side_effects.updatesZ[1].piece().clone().unwrap();
+        assert_eq!(side_effects.updates[1].pos(), &board_pos!["f1"]);
+        let updated_piece = side_effects.updates[1].piece().clone().unwrap();
         assert_eq!(updated_piece.color(), &PieceColor::White);
         assert_eq!(updated_piece.piece_type(), &PieceType::Rook);
     }
@@ -569,78 +587,74 @@ mod black_castling_tests {
     }
 
     #[test]
-    #[ignore]
     fn castling_queen_side_updates_a1_to_empty() {
         let (board, _) = castle_queen_side();
-        assert!(board.piece_at(&board_pos!("a1")).is_none());
+        assert!(board.piece_at(&board_pos!("a8")).is_none());
     }
 
     #[test]
-    #[ignore]
-    fn castling_king_side_updates_h1_to_empty() {
+    fn castling_king_side_updates_h8_to_empty() {
         let (board, _) = castle_king_side();
-        assert!(board.piece_at(&board_pos!("h1")).is_none());
+        assert!(board.piece_at(&board_pos!("h8")).is_none());
     }
 
     #[test]
-    #[ignore]
     fn castling_queen_side_updates_d1_with_rook() {
         let (board, _) = castle_queen_side();
-        let rd1 = board.piece_at(&board_pos!("d1")).unwrap();
+        let rd1 = board.piece_at(&board_pos!("d8")).unwrap();
         assert_eq!(rd1.piece_type(), &PieceType::Rook);
-        assert_eq!(rd1.color(), &PieceColor::White);
+        assert_eq!(rd1.color(), &PieceColor::Black);
     }
 
     #[test]
-    #[ignore]
     fn castling_king_side_updates_f1_with_rook() {
         let (board, _) = castle_king_side();
-        let rf1 = board.piece_at(&board_pos!("f1")).unwrap();
+        let rf1 = board.piece_at(&board_pos!("f8")).unwrap();
         assert_eq!(rf1.piece_type(), &PieceType::Rook);
-        assert_eq!(rf1.color(), &PieceColor::White);
+        assert_eq!(rf1.color(), &PieceColor::Black);
     }
 
     #[test]
-    #[ignore]
     fn castling_queen_side_move_has_correct_side_effects() {
         let (_, side_effects) = castle_queen_side();
-        assert_eq!(side_effects.updatesZ[0].pos(), &board_pos!["a1"]);
-        assert!(side_effects.updatesZ[0].piece().is_none());
+        assert_eq!(side_effects.updates[0].pos(), &board_pos!["a8"]);
+        assert!(side_effects.updates[0].piece().is_none());
 
-        assert_eq!(side_effects.updatesZ[1].pos(), &board_pos!["d1"]);
-        let updated_piece = side_effects.updatesZ[1].piece().clone().unwrap();
-        assert_eq!(updated_piece.color(), &PieceColor::White);
+        assert_eq!(side_effects.updates[1].pos(), &board_pos!["d8"]);
+        let updated_piece = side_effects.updates[1].piece().clone().unwrap();
+        assert_eq!(updated_piece.color(), &PieceColor::Black);
         assert_eq!(updated_piece.piece_type(), &PieceType::Rook);
     }
 
     #[test]
-    #[ignore]
     fn castling_king_side_move_has_correct_side_effects() {
         let (_, side_effects) = castle_king_side();
-        assert_eq!(side_effects.updatesZ[0].pos(), &board_pos!["h1"]);
-        assert!(side_effects.updatesZ[0].piece().is_none());
+        assert_eq!(side_effects.updates[0].pos(), &board_pos!["h8"]);
+        assert!(side_effects.updates[0].piece().is_none());
 
-        assert_eq!(side_effects.updatesZ[1].pos(), &board_pos!["f1"]);
-        let updated_piece = side_effects.updatesZ[1].piece().clone().unwrap();
-        assert_eq!(updated_piece.color(), &PieceColor::White);
+        assert_eq!(side_effects.updates[1].pos(), &board_pos!["f8"]);
+        let updated_piece = side_effects.updates[1].piece().clone().unwrap();
+        assert_eq!(updated_piece.color(), &PieceColor::Black);
         assert_eq!(updated_piece.piece_type(), &PieceType::Rook);
     }
 
     fn castle_queen_side() -> (CheckerBoard, BoardSideEffects) {
-        let ke1 = BoardPiece::build(PieceType::King, PieceColor::White, "e1");
-        let ra1 = BoardPiece::build(PieceType::Rook, PieceColor::White, "a1");
-        let rh1 = BoardPiece::build(PieceType::Rook, PieceColor::White, "h1");
-        let mut board = CheckerBoard::with_pieces(vec![ke1, ra1, rh1]);
-        let side_effects = board.move_piece(&board_pos!["e1"], &board_pos!["c1"]);
+        let ke8 = BoardPiece::build(PieceType::King, PieceColor::Black, "e8");
+        let ra8 = BoardPiece::build(PieceType::Rook, PieceColor::Black, "a8");
+        let e2 = BoardPiece::build(PieceType::Pawn, PieceColor::White, "e2");
+        let mut board = CheckerBoard::with_pieces(vec![ke8, ra8, e2]);
+        board.move_piece(&board_pos!["e2"], &board_pos!["e4"]);
+        let side_effects = board.move_piece(&board_pos!["e8"], &board_pos!["c8"]);
         (board, side_effects)
     }
 
     fn castle_king_side() -> (CheckerBoard, BoardSideEffects) {
-        let ke1 = BoardPiece::build(PieceType::King, PieceColor::White, "e1");
-        let ra1 = BoardPiece::build(PieceType::Rook, PieceColor::White, "a1");
-        let rh1 = BoardPiece::build(PieceType::Rook, PieceColor::White, "h1");
-        let mut board = CheckerBoard::with_pieces(vec![ke1, ra1, rh1]);
-        let side_effects = board.move_piece(&board_pos!["e1"], &board_pos!["g1"]);
+        let ke8 = BoardPiece::build(PieceType::King, PieceColor::Black, "e8");
+        let rh8 = BoardPiece::build(PieceType::Rook, PieceColor::Black, "h8");
+        let e2 = BoardPiece::build(PieceType::Pawn, PieceColor::White, "e2");
+        let mut board = CheckerBoard::with_pieces(vec![ke8, rh8, e2]);
+        board.move_piece(&board_pos!["e2"], &board_pos!["e4"]);
+        let side_effects = board.move_piece(&board_pos!["e8"], &board_pos!["g8"]);
         (board, side_effects)
     }
 }

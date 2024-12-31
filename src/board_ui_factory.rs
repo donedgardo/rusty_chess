@@ -129,7 +129,7 @@ impl BoardUiFactory {
                 self.move_piece_to(piece_entity, &mut commands, &from, &to);
                 self.update_entities_from_side_effects(
                     &mut texture_query,
-                    side_effects.updatesZ,
+                    side_effects.updates,
                     &mut commands,
                     asset_server,
                     texture_atlas_layouts,
