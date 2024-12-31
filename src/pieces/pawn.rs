@@ -2,7 +2,9 @@ use crate::board::CheckerBoard;
 use crate::board_move::BoardMove;
 use crate::board_piece::BoardPiece;
 use crate::board_position::BoardPosition;
+use crate::board_side_effects::BoardUpdate;
 use crate::pieces::color::PieceColor;
+use crate::pieces::factory::PieceFactory;
 use crate::pieces::piece_type::PieceType;
 use crate::pieces::Piece;
 
@@ -244,12 +246,11 @@ impl Piece for Pawn {
         board: &CheckerBoard,
         _from: &BoardPosition,
         to: &BoardPosition,
-    ) -> Vec<BoardPiece> {
+    ) -> Vec<BoardUpdate> {
         if board.is_last_row_for_white(to) || board.is_last_row_for_black(to) {
-            vec![BoardPiece::build(
-                PieceType::Queen,
-                self.color().clone(),
-                &to.to_string().clone(),
+            vec![BoardUpdate(
+                to.clone(),
+                Some(PieceFactory::build(PieceType::Queen, self.color().clone())),
             )]
         } else {
             vec![]
@@ -585,8 +586,7 @@ mod white_pawn_tests {
         let pieces = vec![a2];
         let board = CheckerBoard::with_pieces(pieces);
         let pawn = Pawn::new(PieceColor::White);
-        let side_effects: Vec<BoardPiece> =
-            pawn.side_effects(&board, &board_pos!("a2"), &board_pos!("a3"));
+        let side_effects = pawn.side_effects(&board, &board_pos!("a2"), &board_pos!("a3"));
         assert_eq!(side_effects.len(), 0);
     }
 
@@ -596,12 +596,12 @@ mod white_pawn_tests {
         let pieces = vec![a7];
         let board = CheckerBoard::with_pieces(pieces);
         let pawn = Pawn::new(PieceColor::White);
-        let side_effects: Vec<BoardPiece> =
-            pawn.side_effects(&board, &board_pos!("a7"), &board_pos!("a8"));
+        let side_effects = pawn.side_effects(&board, &board_pos!("a7"), &board_pos!("a8"));
         assert_eq!(side_effects.len(), 1);
-        assert_eq!(side_effects[0].piece().piece_type(), &PieceType::Queen);
-        assert_eq!(side_effects[0].piece().color(), &PieceColor::White);
-        assert_eq!(side_effects[0].pos(), &board_pos!("a8"));
+        let board_update = side_effects.first().unwrap().piece().clone().unwrap();
+        assert_eq!(board_update.piece_type(), &PieceType::Queen);
+        assert_eq!(board_update.color(), &PieceColor::White);
+        assert_eq!(side_effects[0].0, board_pos!("a8"));
     }
 }
 
@@ -905,8 +905,7 @@ mod black_pawn_tests {
         let mut board = CheckerBoard::with_pieces(pieces);
         board.move_piece(&board_pos!["a2"], &board_pos!["a3"]);
         let pawn = Pawn::new(PieceColor::Black);
-        let side_effects: Vec<BoardPiece> =
-            pawn.side_effects(&board, &board_pos!("d3"), &board_pos!("d2"));
+        let side_effects = pawn.side_effects(&board, &board_pos!("d3"), &board_pos!("d2"));
         assert_eq!(side_effects.len(), 0);
     }
 
@@ -918,11 +917,11 @@ mod black_pawn_tests {
         let mut board = CheckerBoard::with_pieces(pieces);
         board.move_piece(&board_pos!["a2"], &board_pos!["a3"]);
         let pawn = Pawn::new(PieceColor::Black);
-        let side_effects: Vec<BoardPiece> =
-            pawn.side_effects(&board, &board_pos!("d2"), &board_pos!("d1"));
+        let side_effects = pawn.side_effects(&board, &board_pos!("d2"), &board_pos!("d1"));
         assert_eq!(side_effects.len(), 1);
-        assert_eq!(side_effects[0].piece().piece_type(), &PieceType::Queen);
-        assert_eq!(side_effects[0].piece().color(), &PieceColor::Black);
-        assert_eq!(side_effects[0].pos(), &board_pos!("d1"));
+        let board_update = side_effects.first().unwrap().piece().clone().unwrap();
+        assert_eq!(board_update.piece_type(), &PieceType::Queen);
+        assert_eq!(board_update.color(), &PieceColor::Black);
+        assert_eq!(side_effects[0].0, board_pos!("d1"));
     }
 }

@@ -2,8 +2,10 @@ use crate::board::CheckerBoard;
 use crate::board_piece::BoardPiece;
 use crate::board_position::BoardPosition;
 use crate::board_position_marker::BoardPositionMarker;
+use crate::board_side_effects::BoardUpdate;
 use crate::pieces::color::PieceColor;
 use crate::pieces::piece_type::PieceType;
+use crate::pieces::Piece;
 use crate::{BoardPieceComponent, WithBoardPosition};
 use bevy::prelude::{BuildChildren, Commands, Component, Entity, Query, Resource, Transform, With};
 use bevy::sprite::TextureAtlas;
@@ -123,7 +125,11 @@ impl BoardUiFactory {
                 let side_effects = self.board.move_piece(&from, &to);
                 self.remove_all_taken_pieces(&mut commands, pieces_query, side_effects.takes);
                 self.move_piece_to(piece_entity, &mut commands, &from, &to);
-                self.update_entities_from_side_effects(&mut texture_query, side_effects.updates);
+                self.update_entities_from_side_effects(
+                    &mut texture_query,
+                    side_effects.updatesZ,
+                    &mut commands,
+                );
             }
         }
     }
@@ -132,13 +138,23 @@ impl BoardUiFactory {
     fn update_entities_from_side_effects(
         &mut self,
         texture_query: &mut Query<&mut TextureAtlas>,
-        side_effects: Vec<BoardPiece>,
+        side_effects: Vec<BoardUpdate>,
+        commands: &mut Commands,
     ) {
-        for piece_update in side_effects {
-            if let Some(entity) = self.piece_entities.get(piece_update.pos()) {
-                if let Some(mut texture) = texture_query.get_mut(entity.clone()).ok() {
-                    if let Some(index) = self.get_sprite_index(piece_update.pos()) {
-                        texture.index = index;
+        for board_update in side_effects {
+            match board_update.piece() {
+                None => {
+                    if let Some(entity) = self.piece_entities.get(board_update.pos()) {
+                        commands.entity(*entity).despawn();
+                    }
+                }
+                Some(_) => {
+                    if let Some(entity) = self.piece_entities.get(board_update.pos()) {
+                        if let Some(mut texture) = texture_query.get_mut(entity.clone()).ok() {
+                            if let Some(index) = self.get_sprite_index(board_update.pos()) {
+                                texture.index = index;
+                            }
+                        }
                     }
                 }
             }

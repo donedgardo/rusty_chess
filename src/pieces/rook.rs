@@ -1,6 +1,6 @@
 use crate::board::CheckerBoard;
-use crate::board_piece::BoardPiece;
 use crate::board_position::BoardPosition;
+use crate::board_side_effects::BoardUpdate;
 use crate::pieces::color::PieceColor;
 use crate::pieces::horizontal_vertical_mover::HorizontalVerticalMovement;
 use crate::pieces::piece_type::PieceType;
@@ -53,7 +53,7 @@ impl Piece for Rook {
         _board: &CheckerBoard,
         _from: &BoardPosition,
         _to: &BoardPosition,
-    ) -> Vec<BoardPiece> {
+    ) -> Vec<BoardUpdate> {
         vec![]
     }
 }

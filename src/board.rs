@@ -142,13 +142,14 @@ impl CheckerBoard {
         let mut board_side_effects = BoardSideEffects {
             takes: vec![],
             updates: vec![],
+            updatesZ: vec![],
         };
         if !self.is_valid_move(from, to) {
             return board_side_effects;
         }
         if let Some(p) = self.piece_at(from) {
             board_side_effects.takes = p.takes(self, from, to);
-            board_side_effects.updates = p.side_effects(self, from, to);
+            board_side_effects.updatesZ = p.side_effects(self, from, to);
         }
         if let Some(p) = self.pieces.remove(from) {
             for takes in board_side_effects.takes.iter() {
@@ -161,9 +162,16 @@ impl CheckerBoard {
                 to.clone(),
             ));
             self.pieces.insert(to.clone(), p);
-            for side_effect in board_side_effects.updates.iter() {
-                self.pieces
-                    .insert(side_effect.pos().clone(), side_effect.piece().clone());
+            for board_update in board_side_effects.updatesZ.iter() {
+                match board_update.piece() {
+                    None => {
+                        self.pieces.remove(board_update.pos());
+                    }
+                    Some(piece) => {
+                        self.pieces
+                            .insert(board_update.pos().clone(), piece.clone());
+                    }
+                }
             }
         }
         board_side_effects

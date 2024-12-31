@@ -1,6 +1,6 @@
 use crate::board::CheckerBoard;
-use crate::board_piece::BoardPiece;
 use crate::board_position::BoardPosition;
+use crate::board_side_effects::BoardUpdate;
 use crate::pieces::color::PieceColor;
 use crate::pieces::piece_type::PieceType;
 use crate::pieces::Piece;
@@ -69,7 +69,7 @@ impl Piece for King {
         _board: &CheckerBoard,
         _from: &BoardPosition,
         _to: &BoardPosition,
-    ) -> Vec<BoardPiece> {
+    ) -> Vec<BoardUpdate> {
         vec![]
     }
 }
@@ -374,7 +374,7 @@ mod white_castling_tests {
     #[test]
     #[ignore]
     fn castling_queen_side_move_has_correct_side_effects() {
-        let (board, side_effects) = castle_queen_side();
+        // let (board, side_effects) = castle_queen_side();
         // I think updates shouldn't be a vec of board pieces, since some updates are an empty pos.
         // assert!(side_effects
         //     .updates

@@ -1,6 +1,6 @@
 use crate::board::CheckerBoard;
-use crate::board_piece::BoardPiece;
 use crate::board_position::BoardPosition;
+use crate::board_side_effects::BoardUpdate;
 use crate::pieces::color::PieceColor;
 use crate::pieces::piece_type::PieceType;
 use crate::pieces::Piece;
@@ -62,7 +62,7 @@ impl Piece for Knight {
         _board: &CheckerBoard,
         _from: &BoardPosition,
         _to: &BoardPosition,
-    ) -> Vec<BoardPiece> {
+    ) -> Vec<BoardUpdate> {
         vec![]
     }
 }
