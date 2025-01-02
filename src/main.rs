@@ -99,3 +99,25 @@ fn setup(
         );
     }
 }
+
+#[derive(States, Default, Debug, Clone, Eq, PartialEq, Hash)]
+pub enum GameState {
+    #[default]
+    InGame,
+}
+
+#[cfg(test)]
+mod game_state_tests {
+    use crate::GameState;
+    use bevy::prelude::*;
+    use bevy::state::app::StatesPlugin;
+
+    #[test]
+    fn default_is_in_game() {
+        let mut app = App::new();
+        app.add_plugins(StatesPlugin);
+        app.init_state::<GameState>();
+        let state = app.world().resource::<State<GameState>>();
+        assert_eq!(state, &GameState::InGame);
+    }
+}
