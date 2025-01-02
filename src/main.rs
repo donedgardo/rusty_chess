@@ -9,10 +9,9 @@ mod pieces;
 
 use crate::board::CheckerBoard;
 use crate::board_position::BoardPosition;
-use crate::board_position_marker::{add_board_pos_markers_sprite, BoardPositionMarker};
+use crate::board_position_marker::add_board_pos_markers_sprite;
 use bevy::asset::AssetMetaCheck;
 use bevy::prelude::*;
-use bevy_mod_picking::prelude::{Drop, Listener, On, Pickable, Pointer};
 use bevy_mod_picking::{low_latency_window_plugin, DefaultPickingPlugins};
 use board_ui_factory::BoardUiFactory;
 
@@ -91,47 +90,8 @@ fn setup(
         ..Default::default()
     });
     for pos in board_ui_factory.get_pos_iter() {
-        let pos_transform = board_ui_factory.get_pos_transform(&pos);
-        let id = commands
-            .spawn((
-                SpriteBundle {
-                    texture: asset_server.load("board_position_empty.png"),
-                    transform: pos_transform.clone(),
-                    ..default()
-                },
-                Pickable::default(),
-                BoardPosComponent(pos.clone()),
-                // TODO: Duplication almost identical to
-                // board ui factory create board piece entity drop
-                On::<Pointer<Drop>>::run(
-                    |event: Listener<Pointer<Drop>>,
-                     mut commands: Commands,
-                     asset_server: Res<AssetServer>,
-                     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
-                     mut board_ui_factory: ResMut<BoardUiFactory>,
-                     board_piece_query: Query<(Entity, &BoardPieceComponent)>,
-                     board_pos_query: Query<(Entity, &BoardPosComponent)>,
-                     texture_query: Query<&mut TextureAtlas>,
-                     marker_query: Query<Entity, With<BoardPositionMarker>>| {
-                        let from = BoardUiFactory::get_pos(event.dropped, &board_piece_query);
-                        let to = BoardUiFactory::get_pos(event.target, &board_pos_query);
-                        board_ui_factory.move_pieces(
-                            event.dropped,
-                            &mut commands,
-                            board_piece_query,
-                            texture_query,
-                            from,
-                            to,
-                            &asset_server,
-                            &mut texture_atlas_layouts,
-                        );
-                        BoardUiFactory::remove_all_markers(&mut commands, &marker_query);
-                    },
-                ),
-            ))
-            .id();
-        board_ui_factory.add_board_pos_entity(&pos, id);
-        board_ui_factory.create_board_piece_entity(
+        board_ui_factory.create_empty_board_position(&mut commands, &asset_server, &pos);
+        board_ui_factory.create_board_piece(
             &mut commands,
             &asset_server,
             &mut texture_atlas_layouts,

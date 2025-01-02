@@ -4,7 +4,7 @@ use crate::board_position_marker::BoardPositionMarker;
 use crate::board_side_effects::BoardUpdate;
 use crate::pieces::color::PieceColor;
 use crate::pieces::piece_type::PieceType;
-use crate::{BoardPieceComponent, WithBoardPosition};
+use crate::{BoardPieceComponent, BoardPosComponent, WithBoardPosition};
 use bevy::prelude::*;
 use bevy::sprite::TextureAtlas;
 use bevy::utils::HashMap;
@@ -138,7 +138,7 @@ impl BoardUiFactory {
         }
     }
 
-    pub fn create_board_piece_entity(
+    pub fn create_board_piece(
         &mut self,
         commands: &mut Commands,
         asset_server: &Res<AssetServer>,
@@ -240,7 +240,7 @@ impl BoardUiFactory {
                             }
                         }
                     } else {
-                        self.create_board_piece_entity(
+                        self.create_board_piece(
                             commands,
                             &asset_server,
                             texture_atlas_layouts,
@@ -313,6 +313,55 @@ impl BoardUiFactory {
             .get(entity)
             .ok()
             .and_then(|(_, component)| Some(component.pos().clone()))
+    }
+
+    //not tested
+    pub fn create_empty_board_position(
+        &mut self,
+        commands: &mut Commands,
+        asset_server: &Res<AssetServer>,
+        pos: &BoardPosition,
+    ) {
+        let pos_transform = self.get_pos_transform(&pos);
+        let id = commands
+            .spawn((
+                SpriteBundle {
+                    texture: asset_server.load("board_position_empty.png"),
+                    transform: pos_transform.clone(),
+                    ..default()
+                },
+                Pickable::default(),
+                BoardPosComponent(pos.clone()),
+                // TODO: Duplication almost identical to
+                // board ui factory create board piece entity drop
+                On::<Pointer<Drop>>::run(
+                    |event: Listener<Pointer<Drop>>,
+                     mut commands: Commands,
+                     asset_server: Res<AssetServer>,
+                     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+                     mut board_ui_factory: ResMut<BoardUiFactory>,
+                     board_piece_query: Query<(Entity, &BoardPieceComponent)>,
+                     board_pos_query: Query<(Entity, &BoardPosComponent)>,
+                     texture_query: Query<&mut TextureAtlas>,
+                     marker_query: Query<Entity, With<BoardPositionMarker>>| {
+                        let from = BoardUiFactory::get_pos(event.dropped, &board_piece_query);
+                        let to = BoardUiFactory::get_pos(event.target, &board_pos_query);
+                        board_ui_factory.move_pieces(
+                            event.dropped,
+                            &mut commands,
+                            board_piece_query,
+                            texture_query,
+                            from,
+                            to,
+                            &asset_server,
+                            &mut texture_atlas_layouts,
+                        );
+                        BoardUiFactory::remove_all_markers(&mut commands, &marker_query);
+                    },
+                ),
+            ))
+            .id();
+        self.add_board_pos_entity(&pos, id);
     }
 }
 
