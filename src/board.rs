@@ -346,10 +346,16 @@ impl CheckerBoard {
     }
 
     pub fn is_draw(&self) -> bool {
+        let active_player = self.active_turn();
+        self.get_moves_for_color(active_player).is_empty() && !self.is_mated(active_player)
+    }
+
+    pub fn is_game_over(&self) -> bool {
+        if self.is_draw() {
+            return true;
+        };
         let colors = [PieceColor::Black, PieceColor::White];
-        colors
-            .iter()
-            .any(|color| self.get_moves_for_color(color).is_empty())
+        colors.iter().any(|color| self.is_mated(color))
     }
 
     pub fn active_turn(&self) -> &PieceColor {
@@ -384,7 +390,7 @@ impl CheckerBoard {
 }
 
 #[cfg(test)]
-mod chess_board_tests {
+pub mod chess_board_tests {
     use crate::board::CheckerBoard;
     use crate::board_piece::BoardPiece;
     use crate::board_pos;
@@ -613,14 +619,7 @@ mod chess_board_tests {
 
     #[test]
     fn king_attacked_with_no_way_out_is_checkmated() {
-        let pieces = vec![
-            BoardPiece::build(PieceType::Pawn, PieceColor::White, "a7"),
-            BoardPiece::build(PieceType::Pawn, PieceColor::White, "b6"),
-            BoardPiece::build(PieceType::King, PieceColor::White, "a6"),
-            BoardPiece::build(PieceType::King, PieceColor::Black, "a8"),
-        ];
-        let mut board = CheckerBoard::with_pieces(pieces);
-        board.move_piece(&board_pos!("b6"), &board_pos!("b7"));
+        let board = create_game_with_black_mated();
         assert!(board.is_mated(&PieceColor::Black));
     }
 
@@ -636,12 +635,7 @@ mod chess_board_tests {
     }
     #[test]
     fn king_un_attacked_with_no_way_out_is_draw() {
-        let pieces = vec![
-            BoardPiece::build(PieceType::King, PieceColor::White, "h1"),
-            BoardPiece::build(PieceType::Pawn, PieceColor::Black, "h2"),
-            BoardPiece::build(PieceType::King, PieceColor::Black, "g3"),
-        ];
-        let board = CheckerBoard::with_pieces(pieces);
+        let board = create_stale_mate_game();
         assert!(board.is_draw());
     }
 
@@ -842,6 +836,56 @@ mod chess_board_tests {
         assert!(piece.is_some());
         let piece = piece.unwrap();
         assert_eq!(piece.piece_type(), &PieceType::Queen);
+    }
+
+    #[test]
+    fn when_black_is_mated_is_game_over() {
+        let board = create_game_with_black_mated();
+        assert!(board.is_game_over());
+    }
+
+    #[test]
+    fn when_white_is_mated_is_game_over() {
+        let board = create_game_with_white_mated();
+        assert!(board.is_game_over());
+    }
+
+    #[test]
+    fn when_game_is_stale_mate_it_is_over() {
+        let board = create_stale_mate_game();
+        assert!(board.is_game_over());
+    }
+
+    pub fn create_game_with_white_mated() -> CheckerBoard {
+        let pieces = vec![
+            BoardPiece::build(PieceType::Pawn, PieceColor::Black, "a2"),
+            BoardPiece::build(PieceType::Queen, PieceColor::Black, "b2"),
+            BoardPiece::build(PieceType::King, PieceColor::Black, "a3"),
+            BoardPiece::build(PieceType::King, PieceColor::White, "a1"),
+        ];
+        CheckerBoard::with_pieces(pieces)
+    }
+
+    pub fn create_game_with_black_mated() -> CheckerBoard {
+        let pieces = vec![
+            BoardPiece::build(PieceType::Pawn, PieceColor::White, "a7"),
+            BoardPiece::build(PieceType::Pawn, PieceColor::White, "b6"),
+            BoardPiece::build(PieceType::King, PieceColor::White, "a6"),
+            BoardPiece::build(PieceType::King, PieceColor::Black, "a8"),
+        ];
+        let mut board = CheckerBoard::with_pieces(pieces);
+        board.move_piece(&board_pos!("b6"), &board_pos!("b7"));
+        board
+    }
+
+    pub fn create_stale_mate_game() -> CheckerBoard {
+        let pieces = vec![
+            BoardPiece::build(PieceType::King, PieceColor::White, "h1"),
+            BoardPiece::build(PieceType::Pawn, PieceColor::Black, "h2"),
+            BoardPiece::build(PieceType::King, PieceColor::Black, "g3"),
+        ];
+        let board = CheckerBoard::with_pieces(pieces);
+        board
     }
 
     fn assert_all_pos_have_pieces(

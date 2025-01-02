@@ -4,7 +4,7 @@ use crate::board_position_marker::BoardPositionMarker;
 use crate::board_side_effects::BoardUpdate;
 use crate::pieces::color::PieceColor;
 use crate::pieces::piece_type::PieceType;
-use crate::{BoardPieceComponent, BoardPosComponent, WithBoardPosition};
+use crate::{BoardPieceComponent, BoardPosComponent, GameState, WithBoardPosition};
 use bevy::prelude::*;
 use bevy::sprite::TextureAtlas;
 use bevy::utils::HashMap;
@@ -13,11 +13,15 @@ use bevy_mod_picking::PickableBundle;
 
 #[derive(Resource)]
 pub struct BoardUiFactory {
+    pub board: CheckerBoard,
     pos_width: f32,
     pos_height: f32,
-    pub board: CheckerBoard,
     pos_entities: HashMap<BoardPosition, Entity>,
     piece_entities: HashMap<BoardPosition, Entity>,
+    pieces_sprite: Option<Handle<Image>>,
+    pieces_texture_atlas: Option<Handle<TextureAtlasLayout>>,
+    empty_pos_sprite: Option<Handle<Image>>,
+    board_sprite: Option<Handle<Image>>,
 }
 
 impl BoardUiFactory {
@@ -28,6 +32,10 @@ impl BoardUiFactory {
             board,
             pos_entities: HashMap::with_capacity(64),
             piece_entities: HashMap::with_capacity(32),
+            pieces_sprite: None,
+            pieces_texture_atlas: None,
+            empty_pos_sprite: None,
+            board_sprite: None,
         }
     }
     pub fn get_pos_transform(&self, pos: &BoardPosition) -> Transform {
@@ -108,6 +116,20 @@ impl BoardUiFactory {
         self.piece_entities.insert(pos.clone(), entity);
     }
 
+    pub fn add_pieces_sprite_handle(&mut self, sprite_handle: Handle<Image>) {
+        self.pieces_sprite = Some(sprite_handle);
+    }
+    pub fn add_empty_pos_sprite_handle(&mut self, sprite_handle: Handle<Image>) {
+        self.empty_pos_sprite = Some(sprite_handle);
+    }
+
+    pub fn add_board_sprite_handle(&mut self, sprite_handle: Handle<Image>) {
+        self.board_sprite = Some(sprite_handle);
+    }
+    pub fn add_pieces_texture_atlas(&mut self, texture_atlas_handle: Handle<TextureAtlasLayout>) {
+        self.pieces_texture_atlas = Some(texture_atlas_handle);
+    }
+
     // not-tested
     pub fn move_pieces(
         &mut self,
@@ -117,8 +139,7 @@ impl BoardUiFactory {
         mut texture_query: Query<&mut TextureAtlas>,
         from: Option<BoardPosition>,
         to: Option<BoardPosition>,
-        asset_server: &Res<AssetServer>,
-        texture_atlas_layouts: &mut ResMut<Assets<TextureAtlasLayout>>,
+        mut next_state: ResMut<NextState<GameState>>,
     ) {
         if let (Some(from), Some(to)) = (from, to) {
             if !self.board.is_valid_move(&from, &to) {
@@ -131,27 +152,22 @@ impl BoardUiFactory {
                     &mut texture_query,
                     side_effects.updates,
                     &mut commands,
-                    asset_server,
-                    texture_atlas_layouts,
                 );
+                if self.board.is_game_over() {
+                    next_state.set(GameState::GameOver);
+                };
             }
         }
     }
 
-    pub fn create_board_piece(
-        &mut self,
-        commands: &mut Commands,
-        asset_server: &Res<AssetServer>,
-        texture_atlas_layouts: &mut ResMut<Assets<TextureAtlasLayout>>,
-        pos: &BoardPosition,
-    ) {
+    pub fn create_board_piece(&mut self, commands: &mut Commands, pos: &BoardPosition) {
         let pos_transform = self.get_pos_transform(pos);
         if let Some(index) = self.get_sprite_index(&pos) {
-            let texture = asset_server.load("pieces.png");
-            let layout = TextureAtlasLayout::from_grid(UVec2::splat(54), 6, 2, None, None);
-            // TODO:: Performance.
-            // Instead of creating a new atlas layout we can get the one we created on setup.
-            let texture_atlas_layout = texture_atlas_layouts.add(layout);
+            let texture = self.get_pieces_sprite_texture();
+            let texture_atlas_layout = self
+                .pieces_texture_atlas
+                .clone()
+                .unwrap_or(Handle::default());
             let piece_entity = commands
                 .spawn((
                     SpriteBundle {
@@ -176,8 +192,10 @@ impl BoardUiFactory {
                          query: Query<&BoardPieceComponent>| {
                             commands.entity(event.target).insert(Pickable::IGNORE);
                             for board_piece in query.get(event.target).into_iter() {
-                                board_ui_factory
-                                    .add_markers_to_possible_board_moves(&board_piece.0, &mut commands);
+                                board_ui_factory.add_markers_to_possible_board_moves(
+                                    &board_piece.0,
+                                    &mut commands,
+                                );
                             }
                         },
                     ),
@@ -186,15 +204,15 @@ impl BoardUiFactory {
                         transform.translation.y -= drag.delta.y;
                     }),
                     On::<Pointer<DragEnd>>::target_insert(Pickable::default()),
+                    //TODO:: Maybe duplicate
                     On::<Pointer<Drop>>::run(
                         |event: Listener<Pointer<Drop>>,
                          mut commands: Commands,
-                         asset_server: Res<AssetServer>,
-                         mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
                          mut board_ui_factory: ResMut<BoardUiFactory>,
                          pieces_query: Query<(Entity, &BoardPieceComponent)>,
                          texture_query: Query<&mut TextureAtlas>,
-                         marker_query: Query<Entity, With<BoardPositionMarker>>| {
+                         marker_query: Query<Entity, With<BoardPositionMarker>>,
+                         next_state: ResMut<NextState<GameState>>| {
                             let from = BoardUiFactory::get_pos(event.dropped, &pieces_query);
                             let to = BoardUiFactory::get_pos(event.target, &pieces_query);
                             board_ui_factory.move_pieces(
@@ -204,8 +222,7 @@ impl BoardUiFactory {
                                 texture_query,
                                 from,
                                 to,
-                                &asset_server,
-                                &mut texture_atlas_layouts
+                                next_state,
                             );
                             BoardUiFactory::remove_all_markers(&mut commands, &marker_query);
                         },
@@ -222,8 +239,6 @@ impl BoardUiFactory {
         texture_query: &mut Query<&mut TextureAtlas>,
         side_effects: Vec<BoardUpdate>,
         commands: &mut Commands,
-        asset_server: &Res<AssetServer>,
-        texture_atlas_layouts: &mut ResMut<Assets<TextureAtlasLayout>>,
     ) {
         for board_update in side_effects {
             match board_update.piece() {
@@ -240,12 +255,7 @@ impl BoardUiFactory {
                             }
                         }
                     } else {
-                        self.create_board_piece(
-                            commands,
-                            &asset_server,
-                            texture_atlas_layouts,
-                            board_update.pos(),
-                        );
+                        self.create_board_piece(commands, board_update.pos());
                     }
                 }
             }
@@ -316,17 +326,12 @@ impl BoardUiFactory {
     }
 
     //not tested
-    pub fn create_empty_board_position(
-        &mut self,
-        commands: &mut Commands,
-        asset_server: &Res<AssetServer>,
-        pos: &BoardPosition,
-    ) {
+    pub fn create_empty_board_position(&mut self, commands: &mut Commands, pos: &BoardPosition) {
         let pos_transform = self.get_pos_transform(&pos);
         let id = commands
             .spawn((
                 SpriteBundle {
-                    texture: asset_server.load("board_position_empty.png"),
+                    texture: self.get_empty_pos_sprite(),
                     transform: pos_transform.clone(),
                     ..default()
                 },
@@ -337,13 +342,12 @@ impl BoardUiFactory {
                 On::<Pointer<Drop>>::run(
                     |event: Listener<Pointer<Drop>>,
                      mut commands: Commands,
-                     asset_server: Res<AssetServer>,
-                     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
                      mut board_ui_factory: ResMut<BoardUiFactory>,
                      board_piece_query: Query<(Entity, &BoardPieceComponent)>,
                      board_pos_query: Query<(Entity, &BoardPosComponent)>,
                      texture_query: Query<&mut TextureAtlas>,
-                     marker_query: Query<Entity, With<BoardPositionMarker>>| {
+                     marker_query: Query<Entity, With<BoardPositionMarker>>,
+                     next_state: ResMut<NextState<GameState>>| {
                         let from = BoardUiFactory::get_pos(event.dropped, &board_piece_query);
                         let to = BoardUiFactory::get_pos(event.target, &board_pos_query);
                         board_ui_factory.move_pieces(
@@ -353,8 +357,7 @@ impl BoardUiFactory {
                             texture_query,
                             from,
                             to,
-                            &asset_server,
-                            &mut texture_atlas_layouts,
+                            next_state,
                         );
                         BoardUiFactory::remove_all_markers(&mut commands, &marker_query);
                     },
@@ -362,6 +365,26 @@ impl BoardUiFactory {
             ))
             .id();
         self.add_board_pos_entity(&pos, id);
+    }
+    fn get_pieces_sprite_texture(&self) -> Handle<Image> {
+        self.pieces_sprite
+            .clone()
+            .unwrap_or(Handle::default())
+            .clone()
+    }
+
+    pub fn get_board_sprite(&self) -> Handle<Image> {
+        self.board_sprite
+            .clone()
+            .unwrap_or(Handle::default())
+            .clone()
+    }
+
+    fn get_empty_pos_sprite(&self) -> Handle<Image> {
+        self.empty_pos_sprite
+            .clone()
+            .unwrap_or(Handle::default())
+            .clone()
     }
 }
 
