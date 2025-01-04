@@ -164,10 +164,7 @@ impl BoardUiFactory {
         let pos_transform = self.get_pos_transform(pos);
         if let Some(index) = self.get_sprite_index(&pos) {
             let texture = self.get_pieces_sprite_texture();
-            let texture_atlas_layout = self
-                .pieces_texture_atlas
-                .clone()
-                .unwrap_or(Handle::default());
+            let texture_atlas_layout = self.get_pieces_texture_atlas();
             let piece_entity = commands
                 .spawn((
                     SpriteBundle {
@@ -231,6 +228,12 @@ impl BoardUiFactory {
                 .id();
             self.add_piece_entity(&pos, piece_entity);
         }
+    }
+
+    fn get_pieces_texture_atlas(&mut self) -> Handle<TextureAtlasLayout> {
+        self.pieces_texture_atlas
+            .clone()
+            .unwrap_or(Handle::default())
     }
 
     // not tested

@@ -142,6 +142,7 @@ mod game_state_tests {
         let board = CheckerBoard::default();
         let board_ui_factory = BoardUiFactory::new(10., 10., board);
         app.insert_resource(board_ui_factory);
+
         let state = app.world().resource::<State<GameState>>();
         assert_eq!(state, &GameState::InGame);
     }
