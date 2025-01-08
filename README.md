@@ -27,10 +27,10 @@ The primary objectives of this project are:
   - Automated pipelines for testing, building, and deployment.
   - Integration with GitHub Actions for continuous feedback and quality assurance.
  
-  - **Polymorphic Design for Chess Pieces:**
-    - Leveraged polymorphism to create a flexible and maintainable system for chess pieces.
-    - Each piece inherits from a common base class, allowing consistent behavior while enabling unique functionality.
-    - This approach simplifies the addition of new pieces or modifications to existing ones.
+- **Polymorphic Design for Chess Pieces:**
+  - Leveraged polymorphism to create a flexible and maintainable system for chess pieces.
+  - Each piece inherits from a common base class, allowing consistent behavior while enabling unique functionality.
+  - This approach simplifies the addition of new pieces or modifications to existing ones.
 
 ---
 
