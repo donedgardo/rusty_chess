@@ -1,103 +1,160 @@
-# Bevy GitHub CI Template
+# Rusty Chess
 
-This repo show how to set up CI on a GitHub project for Bevy.
+Rusty Chess is an experimental project showcasing the application of Test-Driven Development (TDD) and Continuous Integration/Continuous Deployment (CI/CD) principles in the development of a chess game using Rust. The project explores how robust testing and automated workflows can streamline development and ensure high-quality software.
 
-It creates two workflows:
+[Live Demo](https://donedgardo.itch.io/rusty-chess)
+## Project Goals
 
-* [CI](#CI)
-* [Release](#Release)
+The primary objectives of this project are:
 
-## CI
+1. **Practice TDD in Rust:** Applying TDD methodologies to build a chess game from the ground up.
+2. **Establish CI/CD Pipelines:** Automating the development lifecycle using modern CI/CD practices.
+3. **Promote Best Practices:** Demonstrating how TDD and CI/CD can be leveraged for efficient and reliable Rust development.
 
-Definition: [.github/workflows/ci.yaml](./.github/workflows/ci.yaml)
+---
 
-This workflow runs on every commit to `main` branch, and on every PR targeting the `main` branch.
+## Features
 
-It will use rust stable on linux, with cache between different executions, those commands:
+- **Chess Game Implementation:**
+  - Core chess mechanics developed with a focus on correctness and maintainability.
+  - Iterative development driven by comprehensive unit tests.
 
-* `cargo test`
-* `cargo clippy -- -D warnings`
-* `cargo fmt --all -- --check`
+- **TDD Workflow:**
+  - Tests written before functionality to ensure a fail-pass-refactor cycle.
+  - Strict adherence to the TDD red-green-refactor process.
 
-If you are using anything OS specific or rust nightly, you should update the file [ci.yaml](./.github/workflows/ci.yaml) to use those.
+- **CI/CD Pipeline:**
+  - Automated pipelines for testing, building, and deployment.
+  - Integration with GitHub Actions for continuous feedback and quality assurance.
+ 
+  - **Polymorphic Design for Chess Pieces:**
+    - Leveraged polymorphism to create a flexible and maintainable system for chess pieces.
+    - Each piece inherits from a common base class, allowing consistent behavior while enabling unique functionality.
+    - This approach simplifies the addition of new pieces or modifications to existing ones.
 
-## Release
+---
 
-Definition: [.github/workflows/release.yaml](./.github/workflows/release.yaml)
+## Technologies Used
 
-This workflow runs on every tag.
+- **Rust:** Language used for game development.
+- **Cargo:** Rust's package manager and build system.
+- **GitHub Actions:** For CI/CD pipeline automation.
+- **Mockall:** Library for mocking in Rust to facilitate TDD.
 
-It will build:
-* For Linux and Windows, a .zip archive containing the executable and the `assets`.
-* For macOS, a dmg image with a .app containing the `assets`.
-* For wasm, a .zip archive with the wasm binary, the js bindings, an html file loading it, and the `assets`.
+---
 
-If you don't want to target some of those platforms, you can remove the corresponding job from the file [release.yaml](./.github/workflows/release.yaml).
+## Getting Started
 
-If you don't want to attach the builds to the GitHub release, set `env.add_binaries_to_github_release` to `false`.
+### Prerequisites
 
-If you are using Git LFS, set `env.use_git_lfs` to `true` so your assets are properly checked out.
+- Rust (version X.X or later)
+- Cargo installed
 
-> [!Warning]
-> GitHub's LFS storage has a quota. Please take a look at GitHub's documentation [here](https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-storage-and-bandwidth-usage) to understand the quota and costs before enabling this option.
+### Setup
 
-### Git Tag from GitHub UI
+1. Clone the repository:
 
-You can follow [Managing releases in a repository](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository)
+    ```bash
+    git clone https://github.com/donedgardo/rusty_chess.git
+    cd rusty_chess
+    ```
 
-### Git Tag from the CLI
+2. Build the project:
 
-Execute the following commands: 
+    ```bash
+    cargo build
+    ```
 
-```sh
-git tag -a "my-game-1.0" -m "First official release"
-git push --tags
+3. Run the tests:
+
+    ```bash
+    cargo test
+    ```
+
+---
+
+## Running Tests
+
+Unit tests are the backbone of the development process for Rusty Chess. To execute the tests:
+
+```bash
+cargo test
 ```
 
-### Result
+The tests include:
 
-A new release will be available in GitHub, with the archives per platform available as downloadable assets.
+- **Game Mechanics:** Validations for chess rules and logic.
+- **Edge Cases:** Coverage for scenarios such as stalemates and checkmates.
 
-The `git` commands above produced this release: [my-game-1.0](
-https://github.com/bevyengine/bevy_github_ci_template/releases/tag/my-game-1.0).
+---
 
-## Using the workflows in your own project
+## CI/CD with GitHub Actions
 
-If you would like to use the GitHub workflows included here for your own project, there are a few things you might have to adapt:
+### Pipeline Overview
 
-1. The release workflow relies on the `index.html` file under `/wasm` for web builds
-2. Make sure that the env variable `binary` ([release.yaml](.github/workflows/release.yaml#L10)) matches the name of your binary
-3. Adapt the used toolchain if you are using nightly
-4. In your GitHub repo's settings, under `Actions -> General` make sure "Read and Write permissions" is selected under "Workflow permissions" near the bottom. This fixes the error `Error: Resource not accessible by integration`.
+The GitHub Actions workflow includes:
 
+1. **Code Checkout:** Pulls the latest code from the repository.
+2. **Build:** Ensures the project compiles successfully.
+3. **Tests:** Runs unit tests to validate functionality.
+4. **Deployment:** Deploys the application (future enhancement).
 
-### Publish on itch.io
+### Example GitHub Actions Workflow
 
-The release flow can be configured to push the releases to itch.io:
+```yaml
+name: CI/CD Pipeline
 
-1. Create an API key in https://itch.io/user/settings/api-keys
-2. Go to the repository's Settings tab in GitHub, click on Secrets->Actions in the sidebar,and add a repository secret named `BUTLER_CREDENTIALS` set to the API key.
-3. Uncomment `env.itch_target` in `release.yaml` and set it to the itch.io username and the name of the game on itch.io, separated by a slash (`/`)
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
-Once that is done, any tag pushed to GitHub will trigger an itch.io release and use the tag as the [user version](https://itch.io/docs/butler/pushing.html#specifying-your-own-version-number).
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+
+    - name: Build
+      run: cargo build --verbose
+
+    - name: Test
+      run: cargo test --verbose
+```
+
+---
+
+## Future Enhancements
+
+- Expand game logic to include advanced chess features such as en passant and pawn promotion.
+- Improve CI/CD pipeline with deployment and notification steps.
+- Explore integration testing with a simple UI or command-line interface.
+
+---
+
+## Contributing
+
+Contributions are welcome! If you have ideas or improvements, feel free to open an issue or submit a pull request.
+
+---
 
 ## License
 
-Licensed under either of
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-* Apache License, Version 2.0
-   ([LICENSE-APACHE-2.0](LICENSE-Apache-2.0) or <http://www.apache.org/licenses/LICENSE-2.0>)
-* MIT License
-   ([LICENSE-MIT](LICENSE-MIT) or <http://opensource.org/licenses/MIT>)
-* CC0-1.0 License
-   ([LICENSE-CC0-1.0](LICENSE-CC0-1.0) or <https://creativecommons.org/publicdomain/zero/1.0/legalcode>)
+---
 
-at your option.
+## Acknowledgments
 
-The Ducky sprite is CC-0 licensed by [Caz Creates Games](https://caz-creates-games.itch.io/ducky-2).
-
-## Contribution
-
-Unless you explicitly state otherwise, any contribution intentionally submitted
-for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
-triple licensed as above, without any additional terms or conditions.
+- Rust community for excellent tooling and documentation.
+- Inspiration from TDD and CI/CD best practices in modern software development.
