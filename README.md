@@ -39,7 +39,7 @@ The primary objectives of this project are:
 - **Rust:** Language used for game development.
 - **Cargo:** Rust's package manager and build system.
 - **GitHub Actions:** For CI/CD pipeline automation.
-- **Mockall:** Library for mocking in Rust to facilitate TDD.
+
 
 ---
 
