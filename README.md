@@ -27,10 +27,10 @@ The primary objectives of this project are:
   - Automated pipelines for testing, building, and deployment.
   - Integration with GitHub Actions for continuous feedback and quality assurance.
  
-  - **Polymorphic Design for Chess Pieces:**
-    - Leveraged polymorphism to create a flexible and maintainable system for chess pieces.
-    - Each piece inherits from a common base class, allowing consistent behavior while enabling unique functionality.
-    - This approach simplifies the addition of new pieces or modifications to existing ones.
+- **Polymorphic Design for Chess Pieces:**
+  - Leveraged polymorphism to create a flexible and maintainable system for chess pieces.
+  - Each piece inherits from a common base class, allowing consistent behavior while enabling unique functionality.
+  - This approach simplifies the addition of new pieces or modifications to existing ones.
 
 ---
 
@@ -39,7 +39,7 @@ The primary objectives of this project are:
 - **Rust:** Language used for game development.
 - **Cargo:** Rust's package manager and build system.
 - **GitHub Actions:** For CI/CD pipeline automation.
-- **Mockall:** Library for mocking in Rust to facilitate TDD.
+
 
 ---
 
