@@ -83,8 +83,14 @@ cargo test
 
 The tests include:
 
-- **Game Mechanics:** Validations for chess rules and logic.
-- **Edge Cases:** Coverage for scenarios such as stalemates and checkmates.
+- **Unit tests** (`src/`, next to the code they cover): chess rules and logic for each piece and the board, including edge cases such as stalemates and checkmates.
+- **Integration tests** (`tests/games.rs`): whole games played through the public board API, the same calls the game makes when a piece is dropped on a square. Covers turn order, captures, check, Fool's mate and Scholar's mate.
+
+To run only the integration tests:
+
+```bash
+cargo test --test games
+```
 
 ---
 
