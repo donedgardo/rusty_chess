@@ -142,7 +142,7 @@ jobs:
 
 ## Future Enhancements
 
-- Expand game logic to include advanced chess features such as en passant and pawn promotion.
+- Expand game logic to include piece selection on pawn promotion.
 - Improve CI/CD pipeline with deployment and notification steps.
 - Explore integration testing with a simple UI or command-line interface.
 
